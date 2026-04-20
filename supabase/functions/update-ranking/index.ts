@@ -41,13 +41,13 @@ Deno.serve(async (req) => {
     );
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimErr } = await userClient.auth.getClaims(token);
-    if (claimErr || !claims?.claims?.sub) return json({ error: "Unauthorized" }, 401);
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+    if (userErr || !userData?.user?.id) return json({ error: "Unauthorized" }, 401);
 
     const { data: roleRows } = await userClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", claims.claims.sub);
+      .eq("user_id", userData.user.id);
     const isAdmin = (roleRows ?? []).some((r) => r.role === "admin");
     if (!isAdmin) return json({ error: "Forbidden — admin only" }, 403);
 
