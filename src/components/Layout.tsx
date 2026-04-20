@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { BarChart3, Home, LogIn, LogOut, Swords, Trophy, User, Users } from "lucide-react";
-import NavLink from "./NavLink";
+import NavLink from "./NexusNavLink";
 import { Button } from "@/components/ui/button";
 import { useMockAuth, MockRole } from "@/context/MockAuthContext";
 
