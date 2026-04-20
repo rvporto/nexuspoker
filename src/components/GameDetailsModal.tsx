@@ -220,7 +220,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10">#</TableHead>
+                    <TableHead className="w-16">{game.type === "tournament" ? "Pos." : "#"}</TableHead>
                     <TableHead>Jogador</TableHead>
                     <TableHead className="w-20">Entradas</TableHead>
                     <TableHead className="w-20">Rebuys</TableHead>
@@ -235,7 +235,15 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                   {parts.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>
-                        {p.position && p.position <= 3 ? (
+                        {game.type === "tournament" && isAdmin && game.status !== "finished" ? (
+                          <Input
+                            type="number" min={1}
+                            value={p.position ?? ""}
+                            placeholder="—"
+                            onChange={(e) => updatePart(p.id, { position: e.target.value ? Number(e.target.value) : null })}
+                            className="h-8 w-14"
+                          />
+                        ) : p.position && p.position <= 3 ? (
                           <Trophy className={`h-4 w-4 ${p.position === 1 ? "text-primary" : "text-muted-foreground"}`} />
                         ) : (
                           <span className="text-xs text-muted-foreground">{p.position ?? "—"}</span>
