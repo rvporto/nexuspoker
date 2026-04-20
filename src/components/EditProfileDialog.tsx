@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function EditProfileDialog({ open, onOpenChange, onSaved }: Props) {
-  const { user, profile, refresh } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [nickname, setNickname] = useState(profile?.nickname ?? "");
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
