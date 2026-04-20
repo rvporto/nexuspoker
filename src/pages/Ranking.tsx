@@ -84,7 +84,6 @@ export default function Ranking() {
   );
   const metric = (season ?? 0) >= 2026 ? "points" : "profit";
   const podium = currentRows.slice(0, 3);
-  const rest = currentRows.slice(3);
 
   async function recalc() {
     if (season === null) return;
