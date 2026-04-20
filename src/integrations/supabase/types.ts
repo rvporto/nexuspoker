@@ -14,16 +14,352 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      game_participations: {
+        Row: {
+          created_at: string
+          entries: number
+          final_amount: number
+          game_id: string
+          id: string
+          is_winner: boolean
+          ko_points: number
+          player_name: string
+          player_nickname: string
+          position: number | null
+          profit_loss: number
+          profit_percentage: number
+          ranking_points: number
+          rebuys: number
+          temp_player_id: string | null
+          total_invested: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entries?: number
+          final_amount?: number
+          game_id: string
+          id?: string
+          is_winner?: boolean
+          ko_points?: number
+          player_name: string
+          player_nickname: string
+          position?: number | null
+          profit_loss?: number
+          profit_percentage?: number
+          ranking_points?: number
+          rebuys?: number
+          temp_player_id?: string | null
+          total_invested?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entries?: number
+          final_amount?: number
+          game_id?: string
+          id?: string
+          is_winner?: boolean
+          ko_points?: number
+          player_name?: string
+          player_nickname?: string
+          position?: number | null
+          profit_loss?: number
+          profit_percentage?: number
+          ranking_points?: number
+          rebuys?: number
+          temp_player_id?: string | null
+          total_invested?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_participations_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_participations_temp_player_id_fkey"
+            columns: ["temp_player_id"]
+            isOneToOne: false
+            referencedRelation: "temporary_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          buy_in: number
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string | null
+          house_fee: number
+          id: string
+          name: string
+          rebuy_value: number
+          season_year: number
+          status: Database["public"]["Enums"]["game_status"]
+          total_pot: number
+          type: Database["public"]["Enums"]["game_type"]
+          updated_at: string
+        }
+        Insert: {
+          buy_in: number
+          created_at?: string
+          created_by?: string | null
+          date: string
+          description?: string | null
+          house_fee?: number
+          id?: string
+          name: string
+          rebuy_value: number
+          season_year: number
+          status?: Database["public"]["Enums"]["game_status"]
+          total_pot?: number
+          type: Database["public"]["Enums"]["game_type"]
+          updated_at?: string
+        }
+        Update: {
+          buy_in?: number
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          house_fee?: number
+          id?: string
+          name?: string
+          rebuy_value?: number
+          season_year?: number
+          status?: Database["public"]["Enums"]["game_status"]
+          total_pot?: number
+          type?: Database["public"]["Enums"]["game_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      link_requests: {
+        Row: {
+          id: string
+          requested_at: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["link_request_status"]
+          temp_player_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          requested_at?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["link_request_status"]
+          temp_player_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          requested_at?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["link_request_status"]
+          temp_player_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_requests_temp_player_id_fkey"
+            columns: ["temp_player_id"]
+            isOneToOne: false
+            referencedRelation: "temporary_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          achievements: string[]
+          avatar_url: string | null
+          created_at: string
+          current_rank: number | null
+          full_name: string | null
+          gender: Database["public"]["Enums"]["player_gender"] | null
+          id: string
+          level: number
+          nickname: string | null
+          phone: string | null
+          profile_completed: boolean
+          updated_at: string
+          xp: number
+        }
+        Insert: {
+          achievements?: string[]
+          avatar_url?: string | null
+          created_at?: string
+          current_rank?: number | null
+          full_name?: string | null
+          gender?: Database["public"]["Enums"]["player_gender"] | null
+          id: string
+          level?: number
+          nickname?: string | null
+          phone?: string | null
+          profile_completed?: boolean
+          updated_at?: string
+          xp?: number
+        }
+        Update: {
+          achievements?: string[]
+          avatar_url?: string | null
+          created_at?: string
+          current_rank?: number | null
+          full_name?: string | null
+          gender?: Database["public"]["Enums"]["player_gender"] | null
+          id?: string
+          level?: number
+          nickname?: string | null
+          phone?: string | null
+          profile_completed?: boolean
+          updated_at?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      public_rankings: {
+        Row: {
+          avatar_url: string | null
+          buy_ins: number
+          games_played: number
+          id: string
+          kos: number
+          player_name: string | null
+          player_nickname: string
+          player_ref_id: string
+          player_type: Database["public"]["Enums"]["player_ref_type"]
+          position: number
+          prev_position: number | null
+          rebuys: number
+          season_year: number
+          total_points: number
+          total_profit: number
+          updated_at: string
+          wins: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          buy_ins?: number
+          games_played?: number
+          id?: string
+          kos?: number
+          player_name?: string | null
+          player_nickname: string
+          player_ref_id: string
+          player_type: Database["public"]["Enums"]["player_ref_type"]
+          position: number
+          prev_position?: number | null
+          rebuys?: number
+          season_year: number
+          total_points?: number
+          total_profit?: number
+          updated_at?: string
+          wins?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          buy_ins?: number
+          games_played?: number
+          id?: string
+          kos?: number
+          player_name?: string | null
+          player_nickname?: string
+          player_ref_id?: string
+          player_type?: Database["public"]["Enums"]["player_ref_type"]
+          position?: number
+          prev_position?: number | null
+          rebuys?: number
+          season_year?: number
+          total_points?: number
+          total_profit?: number
+          updated_at?: string
+          wins?: number
+        }
+        Relationships: []
+      }
+      temporary_players: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string | null
+          full_name: string | null
+          gender: Database["public"]["Enums"]["player_gender"] | null
+          id: string
+          nickname: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string | null
+          gender?: Database["public"]["Enums"]["player_gender"] | null
+          id?: string
+          nickname: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string | null
+          gender?: Database["public"]["Enums"]["player_gender"] | null
+          id?: string
+          nickname?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      game_status: "scheduled" | "finished"
+      game_type: "tournament" | "cash"
+      link_request_status: "pending" | "approved" | "rejected"
+      player_gender: "male" | "female" | "other"
+      player_ref_type: "user" | "temp"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +486,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      game_status: ["scheduled", "finished"],
+      game_type: ["tournament", "cash"],
+      link_request_status: ["pending", "approved", "rejected"],
+      player_gender: ["male", "female", "other"],
+      player_ref_type: ["user", "temp"],
+    },
   },
 } as const
