@@ -27,3 +27,19 @@ export const completeProfileSchema = z.object({
     .or(z.literal("")),
   gender: z.enum(["male", "female", "other"]).optional(),
 });
+
+export const createGameSchema = z.object({
+  name: z.string().trim().min(2, "Nome muito curto").max(120),
+  type: z.enum(["tournament", "cash"]),
+  date: z.string().min(1, "Data obrigatória"),
+  buyIn: z.coerce.number().min(0, "Buy-in inválido").max(100000),
+  rebuyValue: z.coerce.number().min(0, "Rebuy inválido").max(100000),
+  seasonYear: z.coerce.number().int().min(2020).max(2100),
+  description: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+export const tempPlayerSchema = z.object({
+  nickname: z.string().trim().min(2, "Nickname muito curto").max(30),
+  fullName: z.string().trim().max(100).optional().or(z.literal("")),
+  gender: z.enum(["male", "female", "other"]).optional(),
+});
