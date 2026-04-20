@@ -375,6 +375,40 @@ export default function Ranking() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[92vh] overflow-auto sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle className="nexus-text-gold">Relatório do Ranking — Temporada {season}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-auto rounded-lg border border-border" style={{ maxHeight: "70vh" }}>
+            <div style={{ transform: "scale(0.55)", transformOrigin: "top left", width: 1200 }}>
+              <RankingReport
+                ref={reportRef}
+                season={season ?? new Date().getFullYear()}
+                metric={metric as "points" | "profit"}
+                rows={currentRows.map((r) => ({
+                  id: r.id,
+                  position: r.position,
+                  player_nickname: r.player_nickname,
+                  avatar_url: (r as any).avatar_url ?? null,
+                  total_points: r.total_points,
+                  total_profit: r.total_profit,
+                  games_played: r.games_played,
+                  wins: r.wins,
+                  kos: r.kos,
+                })) as ReportRow[]}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportOpen(false)}>Fechar</Button>
+            <Button onClick={downloadReport} disabled={downloading} className="bg-gradient-gold text-primary-foreground">
+              <Download className="h-4 w-4" /> {downloading ? "Gerando..." : "Baixar JPEG"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
