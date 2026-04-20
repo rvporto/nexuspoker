@@ -20,7 +20,6 @@ export default function Estatisticas() {
   const [sortKey, setSortKey] = useState<SortKey>("position");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  if (role !== "admin") return <Navigate to="/" replace />;
   const rows = season === 2026 ? mockRanking2026 : mockRanking2025;
   const showPoints = season >= 2026;
 
@@ -46,6 +45,9 @@ export default function Estatisticas() {
       return sortDir === "asc" ? (va as number) - (vb as number) : (vb as number) - (va as number);
     });
   }, [rows, sortKey, sortDir]);
+
+  if (role !== "admin") return <Navigate to="/" replace />;
+
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
