@@ -8,8 +8,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Estatisticas() {
   const { role } = useMockAuth();
-  if (role !== "admin") return <Navigate to="/" replace />;
   const [season, setSeason] = useState<2025 | 2026>(2026);
+  if (role !== "admin") return <Navigate to="/" replace />;
   const rows = season === 2026 ? mockRanking2026 : mockRanking2025;
   const showPoints = season >= 2026;
 
