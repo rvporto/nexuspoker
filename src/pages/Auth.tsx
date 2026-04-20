@@ -1,28 +1,71 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useMockAuth } from "@/context/MockAuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { signInSchema, signUpSchema } from "@/lib/validation";
 
 export default function Auth() {
-  const { setRole } = useMockAuth();
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    if (isLoggedIn) navigate("/", { replace: true });
+  }, [isLoggedIn, navigate]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Preencha email e senha.");
-      return;
+    setSubmitting(true);
+    try {
+      if (mode === "signup") {
+        const parsed = signUpSchema.safeParse({ email, password, fullName });
+        if (!parsed.success) {
+          toast.error(parsed.error.issues[0].message);
+          return;
+        }
+        const { error } = await supabase.auth.signUp({
+          email: parsed.data.email,
+          password: parsed.data.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { full_name: parsed.data.fullName },
+          },
+        });
+        if (error) {
+          if (error.message.toLowerCase().includes("already")) {
+            toast.error("Este email já está cadastrado. Faça login.");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+        toast.success("Conta criada! Complete seu perfil.");
+        navigate("/complete-profile");
+      } else {
+        const parsed = signInSchema.safeParse({ email, password });
+        if (!parsed.success) {
+          toast.error(parsed.error.issues[0].message);
+          return;
+        }
+        const { error } = await supabase.auth.signInWithPassword(parsed.data);
+        if (error) {
+          toast.error("Email ou senha incorretos.");
+          return;
+        }
+        toast.success("Bem-vindo de volta!");
+        navigate("/");
+      }
+    } finally {
+      setSubmitting(false);
     }
-    // Phase 1: mock login. Admin if email contains "admin"
-    setRole(email.includes("admin") ? "admin" : "user");
-    toast.success("Entrou (preview). Backend real na Fase 2.");
-    navigate("/");
   }
 
   return (
@@ -38,27 +81,60 @@ export default function Auth() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "signup" && (
+            <div>
+              <Label htmlFor="fullName">Nome completo</Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Seu nome"
+                required
+              />
+            </div>
+          )}
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="voce@exemplo.com"
+              required
+              autoComplete="email"
+            />
           </div>
           <div>
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              minLength={6}
+            />
           </div>
-          <Button type="submit" className="w-full bg-gradient-gold text-primary-foreground hover:opacity-90">
-            {mode === "login" ? "Entrar" : "Criar conta"}
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-gradient-gold text-primary-foreground hover:opacity-90"
+          >
+            {submitting ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           {mode === "login" ? "Ainda não tem conta? " : "Já tem conta? "}
-          <button className="text-primary hover:underline" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
+          <button
+            type="button"
+            className="text-primary hover:underline"
+            onClick={() => setMode(mode === "login" ? "signup" : "login")}
+          >
             {mode === "login" ? "Criar" : "Entrar"}
           </button>
-        </p>
-        <p className="mt-3 text-center text-[11px] text-muted-foreground">
-          Dica (preview): use um email com "admin" para logar como administrador.
         </p>
       </div>
     </div>

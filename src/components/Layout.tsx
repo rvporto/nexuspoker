@@ -1,13 +1,17 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { BarChart3, Home, LogIn, LogOut, Swords, Trophy, User, Users } from "lucide-react";
+import { BarChart3, Home, LogIn, LogOut, Swords, Trophy, User } from "lucide-react";
 import NavLink from "./NexusNavLink";
 import { Button } from "@/components/ui/button";
-import { useMockAuth, MockRole } from "@/context/MockAuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Layout() {
-  const { role, isLoggedIn, user, setRole } = useMockAuth();
+  const { isLoggedIn, isAdmin, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = role === "admin";
+
+  async function handleSignOut() {
+    await signOut();
+    navigate("/");
+  }
 
   return (
     <div className="min-h-screen">
@@ -40,29 +44,27 @@ export default function Layout() {
           </nav>
 
           <div className="flex items-center gap-2">
-            {/* Dev-only role switcher for Phase 1 preview */}
-            <select
-              aria-label="Papel (dev)"
-              value={role}
-              onChange={(e) => setRole(e.target.value as MockRole)}
-              className="hidden rounded-md border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground md:block"
-            >
-              <option value="guest">Visitante</option>
-              <option value="user">Usuário</option>
-              <option value="admin">Admin</option>
-            </select>
+            {isAdmin && (
+              <span className="hidden rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary md:inline">
+                Admin
+              </span>
+            )}
             {isLoggedIn ? (
               <Button
                 size="sm"
                 variant="outline"
                 className="border-primary/30 text-foreground hover:bg-primary/10"
-                onClick={() => setRole("guest")}
+                onClick={handleSignOut}
               >
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Sair</span>
               </Button>
             ) : (
-              <Button size="sm" className="bg-gradient-gold text-primary-foreground hover:opacity-90" onClick={() => navigate("/auth")}>
+              <Button
+                size="sm"
+                className="bg-gradient-gold text-primary-foreground hover:opacity-90"
+                onClick={() => navigate("/auth")}
+              >
                 <LogIn className="h-4 w-4" />
                 <span className="hidden sm:inline">Entrar</span>
               </Button>
@@ -78,7 +80,14 @@ export default function Layout() {
       <footer className="border-t border-primary/10 py-6">
         <div className="container flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground sm:flex-row">
           <span>© {new Date().getFullYear()} Nexus Poker House</span>
-          {isLoggedIn && user && <span>Conectado como <strong className="text-foreground">{user.nickname}</strong></span>}
+          {isLoggedIn && profile && (
+            <span>
+              Conectado como{" "}
+              <strong className="text-foreground">
+                {profile.nickname || profile.full_name || "jogador"}
+              </strong>
+            </span>
+          )}
         </div>
       </footer>
     </div>
