@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import RankMovementBadge from "@/components/RankMovementBadge";
+import RankingReport, { type ReportRow } from "@/components/RankingReport";
 import { formatBRL, initials } from "@/lib/format";
-import { AlertTriangle, Crown, FileDown, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
+import { AlertTriangle, Crown, Download, FileDown, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { toJpeg } from "html-to-image";
 
 type Row = {
   id: string;
@@ -47,6 +49,26 @@ export default function Ranking() {
   const [linkDialog, setLinkDialog] = useState<{ tempId: string; nickname: string } | null>(null);
   const [linkUserSearch, setLinkUserSearch] = useState("");
   const [profilesForLink, setProfilesForLink] = useState<{ id: string; nickname: string | null; full_name: string | null }[]>([]);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function downloadReport() {
+    if (!reportRef.current) return;
+    setDownloading(true);
+    try {
+      const dataUrl = await toJpeg(reportRef.current, { quality: 0.95, pixelRatio: 2, backgroundColor: "#0a0a0a" });
+      const link = document.createElement("a");
+      link.download = `ranking-nexus-${season}.jpg`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Relatório baixado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar JPEG: " + (e?.message ?? ""));
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function loadAll() {
     setLoading(true);
@@ -204,7 +226,7 @@ export default function Ranking() {
             </TabsList>
           </Tabs>
         )}
-        <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" onClick={() => toast.info("Relatório JPEG — Fase 4.")}>
+        <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => setReportOpen(true)}>
           <FileDown className="h-4 w-4" /> Relatório
         </Button>
       </div>
@@ -227,6 +249,7 @@ export default function Ranking() {
               return (
                 <div key={row.id} className="flex flex-col items-center gap-2">
                   <Avatar className="h-14 w-14 border-2 border-primary/60">
+                    {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
                     <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
                   </Avatar>
                   <div className="text-center">
@@ -264,6 +287,7 @@ export default function Ranking() {
                   <RankMovementBadge current={row.position} previous={row.prev_position ?? undefined} />
                 </div>
                 <Avatar className={`h-10 w-10 border ${isTop3 ? "border-primary/60" : "border-border"}`}>
+                  {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
                   <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
@@ -348,6 +372,40 @@ export default function Ranking() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLinkDialog(null)}>Cancelar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[92vh] overflow-auto sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle className="nexus-text-gold">Relatório do Ranking — Temporada {season}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-auto rounded-lg border border-border" style={{ maxHeight: "70vh" }}>
+            <div style={{ transform: "scale(0.55)", transformOrigin: "top left", width: 1200 }}>
+              <RankingReport
+                ref={reportRef}
+                season={season ?? new Date().getFullYear()}
+                metric={metric as "points" | "profit"}
+                rows={currentRows.map((r) => ({
+                  id: r.id,
+                  position: r.position,
+                  player_nickname: r.player_nickname,
+                  avatar_url: (r as any).avatar_url ?? null,
+                  total_points: r.total_points,
+                  total_profit: r.total_profit,
+                  games_played: r.games_played,
+                  wins: r.wins,
+                  kos: r.kos,
+                })) as ReportRow[]}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportOpen(false)}>Fechar</Button>
+            <Button onClick={downloadReport} disabled={downloading} className="bg-gradient-gold text-primary-foreground">
+              <Download className="h-4 w-4" /> {downloading ? "Gerando..." : "Baixar JPEG"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
