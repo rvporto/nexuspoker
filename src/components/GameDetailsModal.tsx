@@ -110,11 +110,15 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
       const profitPct = invested > 0 ? (profit / invested) * 100 : 0;
       return { ...p, total_invested: invested, profit_loss: profit, profit_percentage: profitPct };
     });
-    // 2. Ordena por final_amount desc para definir position
-    const sorted = [...enriched].sort((a, b) => b.final_amount - a.final_amount);
+    // 2. Para torneios: usa position manual se preenchida; senão, ordena por final_amount
+    // Para cash: sempre ordena por final_amount
+    const hasManualPositions = game.type === "tournament" && enriched.every((p) => p.position && p.position > 0);
+    const sorted = hasManualPositions
+      ? [...enriched].sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+      : [...enriched].sort((a, b) => b.final_amount - a.final_amount);
     const totalPlayers = sorted.length;
     const ranked = sorted.map((p, idx) => {
-      const position = idx + 1;
+      const position = hasManualPositions ? (p.position ?? idx + 1) : idx + 1;
       const points = calcParticipationPoints({
         seasonYear: game.season_year,
         gameType: game.type,
