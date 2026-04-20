@@ -49,6 +49,26 @@ export default function Ranking() {
   const [linkDialog, setLinkDialog] = useState<{ tempId: string; nickname: string } | null>(null);
   const [linkUserSearch, setLinkUserSearch] = useState("");
   const [profilesForLink, setProfilesForLink] = useState<{ id: string; nickname: string | null; full_name: string | null }[]>([]);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function downloadReport() {
+    if (!reportRef.current) return;
+    setDownloading(true);
+    try {
+      const dataUrl = await toJpeg(reportRef.current, { quality: 0.95, pixelRatio: 2, backgroundColor: "#0a0a0a" });
+      const link = document.createElement("a");
+      link.download = `ranking-nexus-${season}.jpg`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Relatório baixado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar JPEG: " + (e?.message ?? ""));
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function loadAll() {
     setLoading(true);
