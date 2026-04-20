@@ -287,6 +287,7 @@ export default function Ranking() {
                   <RankMovementBadge current={row.position} previous={row.prev_position ?? undefined} />
                 </div>
                 <Avatar className={`h-10 w-10 border ${isTop3 ? "border-primary/60" : "border-border"}`}>
+                  {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
                   <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
