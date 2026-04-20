@@ -36,6 +36,8 @@ export type MockRankingRow = {
   games: number;
   wins: number;
   kos: number;
+  buyIns: number;
+  rebuys: number;
 };
 
 export const mockPlayers: MockPlayer[] = [
@@ -106,21 +108,21 @@ export const mockGames: MockGame[] = [
 ];
 
 export const mockRanking2026: MockRankingRow[] = [
-  { position: 1, prevPosition: 2, player: mockPlayers[0], points: 285, profit: 640, games: 8, wins: 3, kos: 12 },
-  { position: 2, prevPosition: 1, player: mockPlayers[1], points: 262, profit: 420, games: 8, wins: 2, kos: 9 },
-  { position: 3, prevPosition: 3, player: mockPlayers[2], points: 241, profit: 310, games: 7, wins: 2, kos: 7 },
-  { position: 4, prevPosition: 5, player: mockPlayers[7], points: 198, profit: 180, games: 6, wins: 1, kos: 5 },
-  { position: 5, prevPosition: 4, player: mockPlayers[3], points: 190, profit: 120, games: 7, wins: 1, kos: 6 },
-  { position: 6, prevPosition: 6, player: mockPlayers[4], points: 152, profit: -40, games: 6, wins: 0, kos: 4 },
-  { position: 7, prevPosition: 8, player: mockPlayers[5], points: 140, profit: -80, games: 5, wins: 0, kos: 3 },
-  { position: 8, prevPosition: 7, player: mockPlayers[8], points: 110, profit: -150, games: 5, wins: 0, kos: 2 },
-  { position: 9, player: mockPlayers[6], points: 78, profit: -220, games: 4, wins: 0, kos: 1 },
+  { position: 1, prevPosition: 2, player: mockPlayers[0], points: 285, profit: 640, games: 8, wins: 3, kos: 12, buyIns: 8, rebuys: 14 },
+  { position: 2, prevPosition: 1, player: mockPlayers[1], points: 262, profit: 420, games: 8, wins: 2, kos: 9, buyIns: 8, rebuys: 11 },
+  { position: 3, prevPosition: 3, player: mockPlayers[2], points: 241, profit: 310, games: 7, wins: 2, kos: 7, buyIns: 7, rebuys: 9 },
+  { position: 4, prevPosition: 5, player: mockPlayers[7], points: 198, profit: 180, games: 6, wins: 1, kos: 5, buyIns: 6, rebuys: 7 },
+  { position: 5, prevPosition: 4, player: mockPlayers[3], points: 190, profit: 120, games: 7, wins: 1, kos: 6, buyIns: 7, rebuys: 8 },
+  { position: 6, prevPosition: 6, player: mockPlayers[4], points: 152, profit: -40, games: 6, wins: 0, kos: 4, buyIns: 6, rebuys: 10 },
+  { position: 7, prevPosition: 8, player: mockPlayers[5], points: 140, profit: -80, games: 5, wins: 0, kos: 3, buyIns: 5, rebuys: 8 },
+  { position: 8, prevPosition: 7, player: mockPlayers[8], points: 110, profit: -150, games: 5, wins: 0, kos: 2, buyIns: 5, rebuys: 9 },
+  { position: 9, player: mockPlayers[6], points: 78, profit: -220, games: 4, wins: 0, kos: 1, buyIns: 4, rebuys: 7 },
 ];
 
 export const mockRanking2025: MockRankingRow[] = [
-  { position: 1, player: mockPlayers[1], points: 0, profit: 2400, games: 22, wins: 5, kos: 28 },
-  { position: 2, player: mockPlayers[0], points: 0, profit: 1850, games: 22, wins: 4, kos: 22 },
-  { position: 3, player: mockPlayers[2], points: 0, profit: 980, games: 20, wins: 3, kos: 18 },
-  { position: 4, player: mockPlayers[4], points: 0, profit: 540, games: 18, wins: 2, kos: 14 },
-  { position: 5, player: mockPlayers[3], points: 0, profit: -120, games: 16, wins: 1, kos: 9 },
+  { position: 1, player: mockPlayers[1], points: 0, profit: 2400, games: 22, wins: 5, kos: 28, buyIns: 22, rebuys: 35 },
+  { position: 2, player: mockPlayers[0], points: 0, profit: 1850, games: 22, wins: 4, kos: 22, buyIns: 22, rebuys: 30 },
+  { position: 3, player: mockPlayers[2], points: 0, profit: 980, games: 20, wins: 3, kos: 18, buyIns: 20, rebuys: 26 },
+  { position: 4, player: mockPlayers[4], points: 0, profit: 540, games: 18, wins: 2, kos: 14, buyIns: 18, rebuys: 22 },
+  { position: 5, player: mockPlayers[3], points: 0, profit: -120, games: 16, wins: 1, kos: 9, buyIns: 16, rebuys: 18 },
 ];
