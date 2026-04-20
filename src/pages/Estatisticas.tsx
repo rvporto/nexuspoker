@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockPlayers, mockRanking2025, mockRanking2026, type MockRankingRow } from "@/data/mockData";
 import { formatBRL, initials } from "@/lib/format";
-import { useMockAuth } from "@/context/MockAuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";

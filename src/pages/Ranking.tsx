@@ -6,12 +6,11 @@ import RankMovementBadge from "@/components/RankMovementBadge";
 import { mockRanking2025, mockRanking2026 } from "@/data/mockData";
 import { formatBRL, initials } from "@/lib/format";
 import { AlertTriangle, Crown, FileDown, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
-import { useMockAuth } from "@/context/MockAuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export default function Ranking() {
-  const { role, isLoggedIn } = useMockAuth();
-  const isAdmin = role === "admin";
+  const { isLoggedIn, isAdmin } = useAuth();
   const [season, setSeason] = useState<2025 | 2026>(2026);
   const [filter, setFilter] = useState<"all" | "tournament" | "cash">("all");
 
