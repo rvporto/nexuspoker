@@ -226,7 +226,7 @@ export default function Ranking() {
             </TabsList>
           </Tabs>
         )}
-        <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" onClick={() => toast.info("Relatório JPEG — Fase 4.")}>
+        <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => setReportOpen(true)}>
           <FileDown className="h-4 w-4" /> Relatório
         </Button>
       </div>
