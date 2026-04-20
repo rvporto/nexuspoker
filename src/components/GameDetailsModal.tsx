@@ -87,6 +87,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
           rebuys: p.rebuys,
           final_amount: p.final_amount,
           ko_points: p.ko_points,
+          position: p.position,
           total_invested: invested,
         })
         .eq("id", p.id);
