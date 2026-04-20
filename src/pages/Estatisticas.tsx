@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockPlayers, mockRanking2025, mockRanking2026, type MockRankingRow } from "@/data/mockData";
 import { formatBRL, initials } from "@/lib/format";
-import { useMockAuth } from "@/context/MockAuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ const entries = (r: MockRankingRow) => r.buyIns + r.rebuys;
 const avgPoints = (r: MockRankingRow) => r.points / Math.max(1, r.games);
 
 export default function Estatisticas() {
-  const { role } = useMockAuth();
+  const { isAdmin, loading } = useAuth();
   const [season, setSeason] = useState<2025 | 2026>(2026);
   const [sortKey, setSortKey] = useState<SortKey>("position");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -46,7 +46,8 @@ export default function Estatisticas() {
     });
   }, [rows, sortKey, sortDir]);
 
-  if (role !== "admin") return <Navigate to="/" replace />;
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
 
 
   const toggleSort = (key: SortKey) => {

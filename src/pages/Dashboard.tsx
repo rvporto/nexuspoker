@@ -2,38 +2,42 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
-import { useMockAuth } from "@/context/MockAuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { mockGames, mockRanking2026 } from "@/data/mockData";
 import { formatBRL, formatDate, initials } from "@/lib/format";
 import { Award, Crown, DollarSign, Gamepad2, LogIn, Medal, Swords, Target, TrendingUp, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
-  const { isLoggedIn, user } = useMockAuth();
+  const { isLoggedIn, profile } = useAuth();
+  const displayName = profile?.nickname || profile?.full_name || "Jogador";
+  const fullName = profile?.full_name || displayName;
   const top5 = mockRanking2026.slice(0, 5);
   const recentGames = mockGames.slice(0, 3);
 
   return (
     <div className="space-y-6">
       <section className="nexus-card p-5">
-        {isLoggedIn && user ? (
+        {isLoggedIn && profile ? (
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14 border-2 border-primary/60">
               <AvatarFallback className="bg-gradient-gold text-primary-foreground font-bold">
-                {initials(user.fullName)}
+                {initials(fullName)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="text-xs text-muted-foreground">Bem-vindo de volta,</div>
-              <h1 className="text-xl font-bold truncate">{user.nickname}</h1>
+              <h1 className="text-xl font-bold truncate">{displayName}</h1>
               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="nexus-chip bg-primary/15 text-primary">Nível 4</span>
-                <span>XP 820 / 1000</span>
+                <span className="nexus-chip bg-primary/15 text-primary">Nível {profile.level}</span>
+                <span>XP {profile.xp} / 1000</span>
               </div>
             </div>
             <div className="hidden text-right sm:block">
               <div className="text-xs text-muted-foreground">Ranking</div>
-              <div className="text-2xl font-bold nexus-text-gold">#1</div>
+              <div className="text-2xl font-bold nexus-text-gold">
+                {profile.current_rank ? `#${profile.current_rank}` : "—"}
+              </div>
             </div>
           </div>
         ) : (

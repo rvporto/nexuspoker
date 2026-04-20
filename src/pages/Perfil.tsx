@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
-import { useMockAuth } from "@/context/MockAuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { mockGames } from "@/data/mockData";
 import { formatBRL, formatDate, initials } from "@/lib/format";
 import { Edit3, Gamepad2, Sparkles, Target, TrendingUp, Trophy } from "lucide-react";
@@ -10,9 +10,12 @@ import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function Perfil() {
-  const { isLoggedIn, user } = useMockAuth();
+  const { isLoggedIn, profile, loading } = useAuth();
+  if (loading) return null;
   if (!isLoggedIn) return <Navigate to="/auth" replace />;
-  if (!user) return null;
+  if (!profile) return null;
+  const displayName = profile.nickname || profile.full_name || "Jogador";
+  const fullName = profile.full_name || displayName;
 
   return (
     <div className="space-y-5">
@@ -21,15 +24,17 @@ export default function Perfil() {
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20 border-2 border-primary/60">
               <AvatarFallback className="bg-gradient-gold text-xl font-bold text-primary-foreground">
-                {initials(user.fullName)}
+                {initials(fullName)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-2xl font-bold nexus-text-gold">{user.nickname}</h1>
-              <p className="text-sm text-muted-foreground">{user.fullName}</p>
+              <h1 className="text-2xl font-bold nexus-text-gold">{displayName}</h1>
+              <p className="text-sm text-muted-foreground">{fullName}</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <span className="nexus-chip bg-primary/15 text-primary">Nível 4</span>
-                <span className="nexus-chip bg-info/15 text-info">Ranking #1</span>
+                <span className="nexus-chip bg-primary/15 text-primary">Nível {profile.level}</span>
+                {profile.current_rank && (
+                  <span className="nexus-chip bg-info/15 text-info">Ranking #{profile.current_rank}</span>
+                )}
               </div>
             </div>
           </div>

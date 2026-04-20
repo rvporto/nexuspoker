@@ -6,12 +6,11 @@ import GameTypeBadge from "@/components/GameTypeBadge";
 import { mockGames } from "@/data/mockData";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { Plus, Search, Users } from "lucide-react";
-import { useMockAuth } from "@/context/MockAuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export default function Partidas() {
-  const { role } = useMockAuth();
-  const isAdmin = role === "admin";
+  const { isAdmin } = useAuth();
   const seasons = useMemo(() => Array.from(new Set(mockGames.map((g) => g.seasonYear))).sort((a, b) => b - a), []);
   const [season, setSeason] = useState<number>(seasons[0]);
   const [query, setQuery] = useState("");
