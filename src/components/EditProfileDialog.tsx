@@ -84,7 +84,7 @@ export default function EditProfileDialog({ open, onOpenChange, onSaved }: Props
     }).eq("player_ref_id", user.id).eq("player_type", "user");
     setSaving(false);
     toast.success("Perfil atualizado");
-    await refresh();
+    await refreshProfile();
     onSaved?.();
     onOpenChange(false);
   }
