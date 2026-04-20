@@ -249,6 +249,7 @@ export default function Ranking() {
               return (
                 <div key={row.id} className="flex flex-col items-center gap-2">
                   <Avatar className="h-14 w-14 border-2 border-primary/60">
+                    {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
                     <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
                   </Avatar>
                   <div className="text-center">
