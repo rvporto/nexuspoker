@@ -84,7 +84,6 @@ export default function Ranking() {
   );
   const metric = (season ?? 0) >= 2026 ? "points" : "profit";
   const podium = currentRows.slice(0, 3);
-  const rest = currentRows.slice(3);
 
   async function recalc() {
     if (season === null) return;
@@ -246,20 +245,25 @@ export default function Ranking() {
         </section>
       )}
 
-      {rest.length > 0 && (
+      {currentRows.length > 0 && (
         <section className="nexus-card divide-y divide-border">
-          {rest.map((row) => {
+          <div className="flex items-center justify-between p-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Classificação completa</h2>
+            <span className="text-xs text-muted-foreground">{currentRows.length} jogadores</span>
+          </div>
+          {currentRows.map((row) => {
             const isTemp = row.player_type === "temp";
             const hasPendingFromMe = isTemp && pendingRequests.some(
               (r) => r.temp_player_id === row.player_ref_id && r.user_id === user?.id,
             );
+            const isTop3 = row.position <= 3;
             return (
-              <div key={row.id} className="flex items-center gap-3 p-4">
+              <div key={row.id} className={`flex items-center gap-3 p-4 ${isTop3 ? "bg-primary/5" : ""}`}>
                 <div className="flex w-14 items-center gap-2">
-                  <span className="text-lg font-bold text-muted-foreground">{row.position}º</span>
+                  <span className={`text-lg font-bold ${isTop3 ? "text-primary" : "text-muted-foreground"}`}>{row.position}º</span>
                   <RankMovementBadge current={row.position} previous={row.prev_position ?? undefined} />
                 </div>
-                <Avatar className="h-10 w-10 border border-border">
+                <Avatar className={`h-10 w-10 border ${isTop3 ? "border-primary/60" : "border-border"}`}>
                   <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">

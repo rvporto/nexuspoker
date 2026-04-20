@@ -87,6 +87,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
           rebuys: p.rebuys,
           final_amount: p.final_amount,
           ko_points: p.ko_points,
+          position: p.position,
           total_invested: invested,
         })
         .eq("id", p.id);
@@ -109,11 +110,15 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
       const profitPct = invested > 0 ? (profit / invested) * 100 : 0;
       return { ...p, total_invested: invested, profit_loss: profit, profit_percentage: profitPct };
     });
-    // 2. Ordena por final_amount desc para definir position
-    const sorted = [...enriched].sort((a, b) => b.final_amount - a.final_amount);
+    // 2. Para torneios: usa position manual se preenchida; senão, ordena por final_amount
+    // Para cash: sempre ordena por final_amount
+    const hasManualPositions = game.type === "tournament" && enriched.every((p) => p.position && p.position > 0);
+    const sorted = hasManualPositions
+      ? [...enriched].sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+      : [...enriched].sort((a, b) => b.final_amount - a.final_amount);
     const totalPlayers = sorted.length;
     const ranked = sorted.map((p, idx) => {
-      const position = idx + 1;
+      const position = hasManualPositions ? (p.position ?? idx + 1) : idx + 1;
       const points = calcParticipationPoints({
         seasonYear: game.season_year,
         gameType: game.type,
@@ -215,7 +220,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10">#</TableHead>
+                    <TableHead className="w-16">{game.type === "tournament" ? "Pos." : "#"}</TableHead>
                     <TableHead>Jogador</TableHead>
                     <TableHead className="w-20">Entradas</TableHead>
                     <TableHead className="w-20">Rebuys</TableHead>
@@ -230,7 +235,15 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                   {parts.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>
-                        {p.position && p.position <= 3 ? (
+                        {game.type === "tournament" && isAdmin && game.status !== "finished" ? (
+                          <Input
+                            type="number" min={1}
+                            value={p.position ?? ""}
+                            placeholder="—"
+                            onChange={(e) => updatePart(p.id, { position: e.target.value ? Number(e.target.value) : null })}
+                            className="h-8 w-14"
+                          />
+                        ) : p.position && p.position <= 3 ? (
                           <Trophy className={`h-4 w-4 ${p.position === 1 ? "text-primary" : "text-muted-foreground"}`} />
                         ) : (
                           <span className="text-xs text-muted-foreground">{p.position ?? "—"}</span>
