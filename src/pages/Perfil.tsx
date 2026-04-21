@@ -5,7 +5,7 @@ import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
 import { useAuth } from "@/context/AuthContext";
 import { formatBRL, formatDate, initials } from "@/lib/format";
-import { Coins, Edit3, Gamepad2, Percent, RefreshCw, Sparkles, Target } from "lucide-react";
+import { Coins, Edit3, Gamepad2, Percent, Sparkles, Target } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { computeXp, currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
 import EditProfileDialog from "@/components/EditProfileDialog";
