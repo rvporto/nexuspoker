@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { formatBRL, formatDateTime, initials } from "@/lib/format";
 import GameTypeBadge from "./GameTypeBadge";
 import { calcParticipationPoints } from "@/lib/scoring";
-import { Trash2, Trophy } from "lucide-react";
+import { Pencil, Trash2, Trophy } from "lucide-react";
 
 type GameRow = {
   id: string;
@@ -56,6 +56,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
   const [parts, setParts] = useState<Participation[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   async function load() {
     if (!gameId) return;
@@ -69,7 +70,9 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
     setLoading(false);
   }
 
-  useEffect(() => { if (open && gameId) load(); }, [open, gameId]);
+  useEffect(() => { if (open && gameId) { setEditMode(false); load(); } }, [open, gameId]);
+
+  const isEditable = isAdmin && (game?.status !== "finished" || editMode);
 
   function updatePart(id: string, patch: Partial<Participation>) {
     setParts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
