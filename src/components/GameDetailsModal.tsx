@@ -113,25 +113,56 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
       const profitPct = invested > 0 ? (profit / invested) * 100 : 0;
       return { ...p, total_invested: invested, profit_loss: profit, profit_percentage: profitPct };
     });
-    // 2. Para torneios: usa position manual se preenchida; senão, ordena por final_amount
-    // Para cash: sempre ordena por final_amount
-    const hasManualPositions = game.type === "tournament" && enriched.every((p) => p.position && p.position > 0);
-    const sorted = hasManualPositions
-      ? [...enriched].sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
-      : [...enriched].sort((a, b) => b.final_amount - a.final_amount);
-    const totalPlayers = sorted.length;
-    const ranked = sorted.map((p, idx) => {
-      const position = hasManualPositions ? (p.position ?? idx + 1) : idx + 1;
-      const points = calcParticipationPoints({
-        seasonYear: game.season_year,
-        gameType: game.type,
-        totalPlayers,
-        position,
-        profitLoss: p.profit_loss,
-        koPoints: p.ko_points ?? 0,
+    const totalPlayers = enriched.length;
+    // Total de "ações" do torneio = soma de entries + rebuys (regulamento 2026)
+    const totalActions = enriched.reduce((s, p) => s + (p.entries ?? 0) + (p.rebuys ?? 0), 0);
+
+    // Posições:
+    // Torneio → posição manual (1..N) OU fallback por final_amount
+    // Cash    → posição = colocação no LUCRO (1 = maior lucro)
+    let ranked;
+    if (game.type === "tournament") {
+      const hasManualPositions = enriched.every((p) => p.position && p.position > 0);
+      const sorted = hasManualPositions
+        ? [...enriched].sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+        : [...enriched].sort((a, b) => b.final_amount - a.final_amount);
+      ranked = sorted.map((p, idx) => {
+        const position = hasManualPositions ? (p.position ?? idx + 1) : idx + 1;
+        const points = calcParticipationPoints({
+          seasonYear: game.season_year,
+          gameType: "tournament",
+          totalPlayers,
+          totalActions,
+          position,
+          profitLoss: p.profit_loss,
+          buyInValue: game.buy_in,
+          koPoints: p.ko_points ?? 0,
+        });
+        return { ...p, position, is_winner: position === 1, ranking_points: points };
       });
-      return { ...p, position, is_winner: position === 1, ranking_points: points };
-    });
+    } else {
+      // CASH: ordena por LUCRO desc → colocação no lucro
+      const sorted = [...enriched].sort((a, b) => b.profit_loss - a.profit_loss);
+      ranked = sorted.map((p, idx) => {
+        const profitPosition = idx + 1;
+        const points = calcParticipationPoints({
+          seasonYear: game.season_year,
+          gameType: "cash",
+          totalPlayers,
+          totalActions,
+          position: profitPosition,
+          profitLoss: p.profit_loss,
+          buyInValue: game.buy_in,
+          koPoints: p.ko_points ?? 0,
+        });
+        return {
+          ...p,
+          position: profitPosition,
+          is_winner: profitPosition === 1 && p.profit_loss > 0,
+          ranking_points: points,
+        };
+      });
+    }
 
     const totalPot = ranked.reduce((sum, p) => sum + p.total_invested, 0);
 
