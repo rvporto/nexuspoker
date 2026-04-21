@@ -8,6 +8,7 @@ import RankMovementBadge from "@/components/RankMovementBadge";
 import RankingReport, { type ReportRow } from "@/components/RankingReport";
 import { formatBRL, initials } from "@/lib/format";
 import { AlertTriangle, Crown, Download, FileDown, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -192,8 +193,11 @@ export default function Ranking() {
             <p className="text-xs text-muted-foreground">
               {pendingRequests.length === 0
                 ? "Nenhum pedido no momento."
-                : "Clique em 'Vincular' nos jogadores temporários abaixo."}
+                : "Aprovar ou rejeitar solicitações."}
             </p>
+            <Button asChild size="sm" variant="outline" className="mt-3 border-primary/40 text-primary hover:bg-primary/10">
+              <Link to="/admin/vinculos">Abrir lista</Link>
+            </Button>
           </div>
           <div className="nexus-card p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-destructive"><AlertTriangle className="h-4 w-4" /> Zona de perigo</div>
@@ -280,6 +284,7 @@ export default function Ranking() {
               (r) => r.temp_player_id === row.player_ref_id && r.user_id === user?.id,
             );
             const isTop3 = row.position <= 3;
+            const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
             return (
               <div key={row.id} className={`flex items-center gap-3 p-4 ${isTop3 ? "bg-primary/5" : ""}`}>
                 <div className="flex w-14 items-center gap-2">
@@ -291,9 +296,33 @@ export default function Ranking() {
                   <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate font-semibold">{row.player_nickname}</span>
-                    {isTemp && <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temporário</span>}
+                    {isMe && (
+                      <span className="nexus-chip bg-primary/20 px-1.5 text-[10px] font-bold text-primary">Você</span>
+                    )}
+                    {isTemp && (
+                      <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temporário</span>
+                    )}
+                    {isTemp && isAdmin && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                        onClick={() => openLinkDialog(row.player_ref_id, row.player_nickname)}
+                      >
+                        <LinkIcon className="h-3 w-3" /> Vincular
+                      </Button>
+                    )}
+                    {isTemp && !isAdmin && isLoggedIn && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                        disabled={hasPendingFromMe}
+                        onClick={() => requestLink(row.player_ref_id)}
+                      >
+                        <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
+                      </Button>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {row.games_played} partidas · {row.wins} vitórias · {row.kos} KOs
@@ -303,31 +332,7 @@ export default function Ranking() {
                   <div className="font-bold text-primary">
                     {metric === "points" ? `${row.total_points} pts` : formatBRL(row.total_profit)}
                   </div>
-                  {metric === "points" && (
-                    <div className={`text-xs ${row.total_profit >= 0 ? "text-success" : "text-destructive"}`}>
-                      {formatBRL(row.total_profit)}
-                    </div>
-                  )}
                 </div>
-                {isTemp && isAdmin && (
-                  <Button
-                    size="sm" variant="outline"
-                    className="border-primary/40 text-primary hover:bg-primary/10"
-                    onClick={() => openLinkDialog(row.player_ref_id, row.player_nickname)}
-                  >
-                    <LinkIcon className="h-3 w-3" /> Vincular
-                  </Button>
-                )}
-                {isTemp && !isAdmin && isLoggedIn && (
-                  <Button
-                    size="sm" variant="outline"
-                    className="border-primary/40 text-primary hover:bg-primary/10"
-                    disabled={hasPendingFromMe}
-                    onClick={() => requestLink(row.player_ref_id)}
-                  >
-                    <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
-                  </Button>
-                )}
               </div>
             );
           })}
