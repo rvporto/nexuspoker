@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { formatBRL, formatDateTime, initials } from "@/lib/format";
 import GameTypeBadge from "./GameTypeBadge";
 import { calcParticipationPoints } from "@/lib/scoring";
-import { Trash2, Trophy } from "lucide-react";
+import { Pencil, Trash2, Trophy } from "lucide-react";
 
 type GameRow = {
   id: string;
@@ -56,6 +56,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
   const [parts, setParts] = useState<Participation[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   async function load() {
     if (!gameId) return;
@@ -69,7 +70,9 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
     setLoading(false);
   }
 
-  useEffect(() => { if (open && gameId) load(); }, [open, gameId]);
+  useEffect(() => { if (open && gameId) { setEditMode(false); load(); } }, [open, gameId]);
+
+  const isEditable = isAdmin && (game?.status !== "finished" || editMode);
 
   function updatePart(id: string, patch: Partial<Participation>) {
     setParts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -160,10 +163,16 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
       .from("games")
       .update({ status: "finished", total_pot: totalPot })
       .eq("id", game.id);
-    setSaving(false);
-    if (gErr) { toast.error("Erro ao finalizar partida"); return; }
+    if (gErr) { setSaving(false); toast.error("Erro ao finalizar partida"); return; }
 
-    toast.success("Partida finalizada! Atualize o ranking para refletir.");
+    // Atualiza ranking automaticamente
+    const { error: rErr } = await supabase.functions.invoke("update-ranking", {
+      body: { seasonYear: game.season_year },
+    });
+    setSaving(false);
+    setEditMode(false);
+    if (rErr) toast.warning("Partida finalizada, mas falhou ao recalcular ranking: " + rErr.message);
+    else toast.success("Partida finalizada e ranking atualizado!");
     load();
     onChanged?.();
   }
@@ -228,14 +237,14 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                     <TableHead className="w-32">Final (R$)</TableHead>
                     <TableHead className="w-28 text-right">Lucro</TableHead>
                     <TableHead className="w-20 text-right">Pts</TableHead>
-                    {isAdmin && game.status !== "finished" && <TableHead className="w-10"></TableHead>}
+                    {isEditable && <TableHead className="w-10"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {parts.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>
-                        {game.type === "tournament" && isAdmin && game.status !== "finished" ? (
+                        {game.type === "tournament" && isEditable ? (
                           <Input
                             type="number" min={1}
                             value={p.position ?? ""}
@@ -266,7 +275,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                         <Input
                           type="number" min={1}
                           value={p.entries}
-                          disabled={!isAdmin || game.status === "finished"}
+                          disabled={!isEditable}
                           onChange={(e) => updatePart(p.id, { entries: Number(e.target.value) })}
                           className="h-8 w-16"
                         />
@@ -275,7 +284,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                         <Input
                           type="number" min={0}
                           value={p.rebuys}
-                          disabled={!isAdmin || game.status === "finished"}
+                          disabled={!isEditable}
                           onChange={(e) => updatePart(p.id, { rebuys: Number(e.target.value) })}
                           className="h-8 w-16"
                         />
@@ -284,7 +293,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                         <Input
                           type="number" min={0}
                           value={p.ko_points}
-                          disabled={!isAdmin || game.status === "finished"}
+                          disabled={!isEditable}
                           onChange={(e) => updatePart(p.id, { ko_points: Number(e.target.value) })}
                           className="h-8 w-20"
                         />
@@ -293,7 +302,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                         <Input
                           type="number" step="0.01" min={0}
                           value={p.final_amount}
-                          disabled={!isAdmin || game.status === "finished"}
+                          disabled={!isEditable}
                           onChange={(e) => updatePart(p.id, { final_amount: Number(e.target.value) })}
                           className="h-8 w-28"
                         />
@@ -304,7 +313,7 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                       <TableCell className="text-right text-sm font-semibold text-primary">
                         {p.ranking_points}
                       </TableCell>
-                      {isAdmin && game.status !== "finished" && (
+                      {isEditable && (
                         <TableCell>
                           <Button size="icon" variant="ghost" onClick={() => removeParticipant(p.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -327,6 +336,21 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
               </Button>
               <Button onClick={finalize} disabled={saving} className="bg-gradient-gold text-primary-foreground">
                 Finalizar Partida
+              </Button>
+            </>
+          )}
+          {isAdmin && game?.status === "finished" && !editMode && (
+            <Button variant="outline" onClick={() => setEditMode(true)} className="border-primary/40 text-primary">
+              <Pencil className="h-4 w-4" /> Editar partida
+            </Button>
+          )}
+          {isAdmin && game?.status === "finished" && editMode && (
+            <>
+              <Button variant="outline" onClick={() => { setEditMode(false); load(); }} disabled={saving}>
+                Cancelar edição
+              </Button>
+              <Button onClick={finalize} disabled={saving} className="bg-gradient-gold text-primary-foreground">
+                {saving ? "Salvando..." : "Salvar e recalcular"}
               </Button>
             </>
           )}

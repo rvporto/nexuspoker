@@ -12,6 +12,7 @@ import Perfil from "@/pages/Perfil";
 import Estatisticas from "@/pages/Estatisticas";
 import Auth from "@/pages/Auth";
 import CompleteProfile from "@/pages/CompleteProfile";
+import LinkRequests from "@/pages/LinkRequests";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/estatisticas" element={<Estatisticas />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/complete-profile" element={<CompleteProfile />} />
+              <Route path="/admin/vinculos" element={<LinkRequests />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

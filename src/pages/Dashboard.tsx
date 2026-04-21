@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatDate, initials } from "@/lib/format";
 import { computeXp, currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
-import { Award, Crown, Gamepad2, LogIn, Swords, Target, TrendingUp, Trophy } from "lucide-react";
+import { Award, Crown, Gamepad2, LogIn, Percent, Sparkles, Swords, Target, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type RankRow = {
@@ -131,14 +131,19 @@ export default function Dashboard() {
         )}
       </section>
 
-      {isLoggedIn && stats && (
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Partidas" value={String(stats.games)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
-          <StatCard label="Vitórias" value={String(stats.wins)} icon={<Trophy className="h-5 w-5" />} tone="gold" />
-          <StatCard label="Lucro total" value={formatBRL(stats.totalProfit)} icon={<TrendingUp className="h-5 w-5" />} tone="success" />
-          <StatCard label="KOs" value={String(stats.kos)} icon={<Target className="h-5 w-5" />} tone="destructive" />
-        </section>
-      )}
+      {isLoggedIn && stats && (() => {
+        const wins = stats.history.filter((h) => h.profit_loss > 0).length;
+        const winPct = stats.games > 0 ? Math.round((wins / stats.games) * 100) : 0;
+        return (
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <StatCard label="Pontos temporada" value={String(Math.round(stats.totalPoints))} icon={<Sparkles className="h-5 w-5" />} tone="gold" />
+            <StatCard label="Partidas" value={String(stats.games)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
+            <StatCard label="% Vitórias" value={`${winPct}%`} icon={<Percent className="h-5 w-5" />} tone="success" />
+            <StatCard label="Posição" value={myRank ? `#${myRank}` : "—"} icon={<Trophy className="h-5 w-5" />} tone="gold" />
+            <StatCard label="KOs" value={String(stats.kos)} icon={<Target className="h-5 w-5" />} tone="destructive" />
+          </section>
+        );
+      })()}
 
       <section className="nexus-card p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -158,6 +163,7 @@ export default function Dashboard() {
               {[top5[1], top5[0], top5[2]].filter(Boolean).map((row, idx) => {
                 const place = idx === 1 ? 1 : idx === 0 ? 2 : 3;
                 const heights = ["h-20", "h-28", "h-16"];
+                const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
                 return (
                   <div key={row.id} className="flex flex-col items-center gap-2">
                     <Avatar className="h-12 w-12 border-2 border-primary/60">
@@ -165,7 +171,10 @@ export default function Dashboard() {
                       <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">
-                      <div className="text-xs font-semibold truncate max-w-[90px]">{row.player_nickname}</div>
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="text-xs font-semibold truncate max-w-[80px]">{row.player_nickname}</div>
+                        {isMe && <span className="nexus-chip bg-primary/20 px-1.5 text-[9px] font-bold text-primary">Você</span>}
+                      </div>
                       <div className="text-[11px] text-muted-foreground">
                         {season >= 2026 ? `${row.total_points} pts` : formatBRL(row.total_profit)}
                       </div>
@@ -178,11 +187,14 @@ export default function Dashboard() {
               })}
             </div>
             <div className="divide-y divide-border">
-              {top5.slice(3).map((row) => (
+              {top5.slice(3).map((row) => {
+                const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
+                return (
                 <div key={row.id} className="flex items-center justify-between py-2 text-sm">
                   <div className="flex items-center gap-3">
                     <span className="w-6 text-muted-foreground">{row.position}º</span>
                     <span className="font-medium">{row.player_nickname}</span>
+                    {isMe && <span className="nexus-chip bg-primary/20 px-1.5 text-[9px] font-bold text-primary">Você</span>}
                     {row.player_type === "temp" && (
                       <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temp</span>
                     )}
@@ -191,7 +203,8 @@ export default function Dashboard() {
                     {season >= 2026 ? `${row.total_points} pts` : formatBRL(row.total_profit)}
                   </span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
