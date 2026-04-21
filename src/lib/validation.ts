@@ -15,6 +15,7 @@ export const signUpSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: z.string().trim().min(2, "Nome muito curto").max(100),
+  nickname: z.string().trim().min(2, "Nickname muito curto").max(30),
 });
 
 export const completeProfileSchema = z.object({

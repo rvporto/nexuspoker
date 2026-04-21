@@ -15,6 +15,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [nickname, setNickname] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function Auth() {
     setSubmitting(true);
     try {
       if (mode === "signup") {
-        const parsed = signUpSchema.safeParse({ email, password, fullName });
+        const parsed = signUpSchema.safeParse({ email, password, fullName, nickname });
         if (!parsed.success) {
           toast.error(parsed.error.issues[0].message);
           return;
@@ -36,7 +37,7 @@ export default function Auth() {
           password: parsed.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: parsed.data.fullName },
+            data: { full_name: parsed.data.fullName, nickname: parsed.data.nickname },
           },
         });
         if (error) {
@@ -82,16 +83,30 @@ export default function Auth() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "signup" && (
-            <div>
-              <Label htmlFor="fullName">Nome completo</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Seu nome"
-                required
-              />
-            </div>
+            <>
+              <div>
+                <Label htmlFor="fullName">Nome completo *</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Seu nome"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="nickname">Nickname *</Label>
+                <Input
+                  id="nickname"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Seu apelido na mesa"
+                  required
+                  minLength={2}
+                  maxLength={30}
+                />
+              </div>
+            </>
           )}
           <div>
             <Label htmlFor="email">Email</Label>
