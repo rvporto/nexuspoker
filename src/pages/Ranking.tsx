@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import RankMovementBadge from "@/components/RankMovementBadge";
 import RankingReport, { type ReportRow } from "@/components/RankingReport";
+import PodiumCard from "@/components/PodiumCard";
 import { formatBRL, initials } from "@/lib/format";
-import { AlertTriangle, Crown, Download, FileDown, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
+import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, Sparkles, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
