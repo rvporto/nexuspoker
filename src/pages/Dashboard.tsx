@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatDate, initials } from "@/lib/format";
 import { computeXp, currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
-import { Award, Crown, Gamepad2, LogIn, Swords, Target, TrendingUp, Trophy } from "lucide-react";
+import { Award, Crown, Gamepad2, LogIn, Percent, Sparkles, Swords, Target, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type RankRow = {
@@ -131,14 +131,19 @@ export default function Dashboard() {
         )}
       </section>
 
-      {isLoggedIn && stats && (
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Partidas" value={String(stats.games)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
-          <StatCard label="Vitórias" value={String(stats.wins)} icon={<Trophy className="h-5 w-5" />} tone="gold" />
-          <StatCard label="Lucro total" value={formatBRL(stats.totalProfit)} icon={<TrendingUp className="h-5 w-5" />} tone="success" />
-          <StatCard label="KOs" value={String(stats.kos)} icon={<Target className="h-5 w-5" />} tone="destructive" />
-        </section>
-      )}
+      {isLoggedIn && stats && (() => {
+        const wins = stats.history.filter((h) => h.profit_loss > 0).length;
+        const winPct = stats.games > 0 ? Math.round((wins / stats.games) * 100) : 0;
+        return (
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <StatCard label="Pontos temporada" value={String(Math.round(stats.totalPoints))} icon={<Sparkles className="h-5 w-5" />} tone="gold" />
+            <StatCard label="Partidas" value={String(stats.games)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
+            <StatCard label="% Vitórias" value={`${winPct}%`} icon={<Percent className="h-5 w-5" />} tone="success" />
+            <StatCard label="Posição" value={myRank ? `#${myRank}` : "—"} icon={<Trophy className="h-5 w-5" />} tone="gold" />
+            <StatCard label="KOs" value={String(stats.kos)} icon={<Target className="h-5 w-5" />} tone="destructive" />
+          </section>
+        );
+      })()}
 
       <section className="nexus-card p-5">
         <div className="mb-4 flex items-center justify-between">
