@@ -289,6 +289,45 @@ export type Database = {
         }
         Relationships: []
       }
+      season_champions: {
+        Row: {
+          champion_avatar_url: string | null
+          champion_metric_value: number
+          champion_nickname: string
+          champion_player_ref_id: string
+          champion_player_type: Database["public"]["Enums"]["player_ref_type"]
+          closed_at: string
+          closed_by: string | null
+          id: string
+          metric_mode: string
+          season_year: number
+        }
+        Insert: {
+          champion_avatar_url?: string | null
+          champion_metric_value?: number
+          champion_nickname: string
+          champion_player_ref_id: string
+          champion_player_type: Database["public"]["Enums"]["player_ref_type"]
+          closed_at?: string
+          closed_by?: string | null
+          id?: string
+          metric_mode?: string
+          season_year: number
+        }
+        Update: {
+          champion_avatar_url?: string | null
+          champion_metric_value?: number
+          champion_nickname?: string
+          champion_player_ref_id?: string
+          champion_player_type?: Database["public"]["Enums"]["player_ref_type"]
+          closed_at?: string
+          closed_by?: string | null
+          id?: string
+          metric_mode?: string
+          season_year?: number
+        }
+        Relationships: []
+      }
       temporary_players: {
         Row: {
           avatar_url: string | null
