@@ -163,10 +163,16 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
       .from("games")
       .update({ status: "finished", total_pot: totalPot })
       .eq("id", game.id);
-    setSaving(false);
-    if (gErr) { toast.error("Erro ao finalizar partida"); return; }
+    if (gErr) { setSaving(false); toast.error("Erro ao finalizar partida"); return; }
 
-    toast.success("Partida finalizada! Atualize o ranking para refletir.");
+    // Atualiza ranking automaticamente
+    const { error: rErr } = await supabase.functions.invoke("update-ranking", {
+      body: { seasonYear: game.season_year },
+    });
+    setSaving(false);
+    setEditMode(false);
+    if (rErr) toast.warning("Partida finalizada, mas falhou ao recalcular ranking: " + rErr.message);
+    else toast.success("Partida finalizada e ranking atualizado!");
     load();
     onChanged?.();
   }
