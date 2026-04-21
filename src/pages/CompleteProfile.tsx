@@ -57,13 +57,28 @@ export default function CompleteProfile() {
         profile_completed: true,
       })
       .eq("id", user.id);
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       toast.error("Erro ao salvar perfil.");
       return;
     }
+    // Se ainda não tem avatar, dispara geração automática (não bloqueia)
+    if (!profile?.avatar_url) {
+      supabase.functions
+        .invoke("auto-avatar", {
+          body: {
+            mode: "single",
+            target: "user",
+            id: user.id,
+            gender: parsed.data.gender ?? null,
+          },
+        })
+        .then(() => refreshProfile())
+        .catch((e) => console.warn("auto-avatar failed", e));
+    }
+    setSubmitting(false);
     await refreshProfile();
-    toast.success("Perfil salvo!");
+    toast.success("Perfil salvo! Seu avatar está sendo gerado.");
     navigate("/");
   }
 

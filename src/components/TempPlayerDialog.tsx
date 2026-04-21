@@ -46,12 +46,19 @@ export default function TempPlayerDialog({ open, onOpenChange, onCreated }: Prop
       })
       .select("id, nickname, full_name")
       .single();
-    setSaving(false);
     if (error || !data) {
+      setSaving(false);
       toast.error("Erro ao criar jogador temporário");
       return;
     }
-    toast.success("Jogador temporário criado");
+    // Dispara geração de avatar IA em background (não bloqueia o fluxo)
+    supabase.functions
+      .invoke("auto-avatar", {
+        body: { mode: "single", target: "temp", id: data.id, gender: parsed.data.gender ?? null },
+      })
+      .catch((e) => console.warn("auto-avatar failed", e));
+    setSaving(false);
+    toast.success("Jogador temporário criado (avatar sendo gerado em segundo plano)");
     onCreated?.(data);
     reset();
     onOpenChange(false);

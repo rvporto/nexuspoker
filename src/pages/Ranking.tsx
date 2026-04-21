@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import RankMovementBadge from "@/components/RankMovementBadge";
 import RankingReport, { type ReportRow } from "@/components/RankingReport";
+import PodiumCard from "@/components/PodiumCard";
 import { formatBRL, initials } from "@/lib/format";
-import { AlertTriangle, Crown, Download, FileDown, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
+import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, Sparkles, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +53,9 @@ export default function Ranking() {
   const [profilesForLink, setProfilesForLink] = useState<{ id: string; nickname: string | null; full_name: string | null }[]>([]);
   const [reportOpen, setReportOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [genAvatars, setGenAvatars] = useState(false);
+  const [closingSeason, setClosingSeason] = useState(false);
+  const [champions, setChampions] = useState<Record<number, { nickname: string; avatar_url: string | null }>>({});
   const reportRef = useRef<HTMLDivElement>(null);
 
   async function downloadReport() {
@@ -95,11 +99,56 @@ export default function Ranking() {
     setPendingRequests((data ?? []) as LinkRequest[]);
   }
 
-  useEffect(() => { loadAll(); }, []);
+  async function loadChampions() {
+    const { data } = await supabase
+      .from("season_champions")
+      .select("season_year, champion_nickname, champion_avatar_url");
+    const map: Record<number, { nickname: string; avatar_url: string | null }> = {};
+    (data ?? []).forEach((c: any) => {
+      map[c.season_year] = { nickname: c.champion_nickname, avatar_url: c.champion_avatar_url };
+    });
+    setChampions(map);
+  }
+
+  useEffect(() => { loadAll(); loadChampions(); }, []);
   useEffect(() => { loadPendingRequests(); }, [isAdmin]);
   useEffect(() => {
     if (season === null && seasons.length > 0) setSeason(seasons[0]);
   }, [seasons, season]);
+
+  async function generateMissingAvatars() {
+    setGenAvatars(true);
+    const { data, error } = await supabase.functions.invoke("auto-avatar", {
+      body: { mode: "batch", limit: 8 },
+    });
+    setGenAvatars(false);
+    if (error) { toast.error("Erro: " + error.message); return; }
+    const ok = (data?.results ?? []).filter((r: any) => r.ok).length;
+    toast.success(`${ok} avatar(es) gerado(s)`);
+    loadAll();
+  }
+
+  async function closeSeason() {
+    if (season === null || currentRows.length === 0) return;
+    if (!confirm(`Encerrar a temporada ${season}? O atual líder será marcado como Campeão.`)) return;
+    const champ = currentRows[0];
+    setClosingSeason(true);
+    const useProfit = season < 2026;
+    const { error } = await supabase.from("season_champions").upsert({
+      season_year: season,
+      champion_player_type: champ.player_type,
+      champion_player_ref_id: champ.player_ref_id,
+      champion_nickname: champ.player_nickname,
+      champion_avatar_url: (champ as any).avatar_url ?? null,
+      champion_metric_value: useProfit ? champ.total_profit : champ.total_points,
+      metric_mode: useProfit ? "profit" : "points",
+      closed_by: user?.id ?? null,
+    }, { onConflict: "season_year" });
+    setClosingSeason(false);
+    if (error) { toast.error("Erro: " + error.message); return; }
+    toast.success(`Temporada ${season} encerrada! ${champ.player_nickname} é o Campeão.`);
+    loadChampions();
+  }
 
   const currentRows = useMemo(
     () => rows.filter((r) => (r as any).season_year === season).sort((a, b) => a.position - b.position),
@@ -230,9 +279,21 @@ export default function Ranking() {
             </TabsList>
           </Tabs>
         )}
-        <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => setReportOpen(true)}>
-          <FileDown className="h-4 w-4" /> Relatório
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <>
+              <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={genAvatars} onClick={generateMissingAvatars}>
+                <Sparkles className="h-4 w-4" /> {genAvatars ? "Gerando..." : "Gerar avatares faltantes"}
+              </Button>
+              <Button size="sm" variant="outline" className="border-primary/30 text-primary hover:bg-primary/10" disabled={closingSeason || currentRows.length === 0} onClick={closeSeason}>
+                <Flag className="h-4 w-4" /> {closingSeason ? "Encerrando..." : "Encerrar temporada"}
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => setReportOpen(true)}>
+            <FileDown className="h-4 w-4" /> Relatório
+          </Button>
+        </div>
       </div>
 
       {loading && <div className="nexus-card p-10 text-center text-sm text-muted-foreground">Carregando...</div>}
@@ -245,27 +306,34 @@ export default function Ranking() {
 
       {podium.length > 0 && (
         <section className="nexus-card p-5">
-          <div className="mb-4 flex items-center gap-2"><Crown className="h-5 w-5 text-primary" /><h2 className="text-lg font-bold">Pódio</h2></div>
-          <div className="grid grid-cols-3 items-end gap-3">
-            {[podium[1], podium[0], podium[2]].filter(Boolean).map((row, idx) => {
-              const place = idx === 1 ? 1 : idx === 0 ? 2 : 3;
-              const heights = ["h-24", "h-32", "h-20"];
+          <div className="mb-6 flex items-center justify-center gap-2">
+            <Crown className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold">Pódio dos Campeões</h2>
+          </div>
+          <div className="grid grid-cols-3 items-end gap-3 sm:gap-5">
+            {[podium[1], podium[0], podium[2]].filter(Boolean).map((row) => {
+              const place = (row.position as 1 | 2 | 3);
+              const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
+              const champ = season ? champions[season] : null;
+              const isClosedChampion = !!champ && place === 1 && champ.nickname === row.player_nickname;
               return (
-                <div key={row.id} className="flex flex-col items-center gap-2">
-                  <Avatar className="h-14 w-14 border-2 border-primary/60">
-                    {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
-                    <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-center">
-                    <div className="max-w-[120px] truncate text-sm font-semibold">{row.player_nickname}</div>
-                    <div className="text-xs font-bold text-primary">
-                      {metric === "points" ? `${row.total_points} pts` : formatBRL(row.total_profit)}
-                    </div>
-                  </div>
-                  <div className={`${heights[idx]} flex w-full items-start justify-center rounded-t-lg bg-gradient-gold pt-2`}>
-                    <span className="text-base font-bold text-primary-foreground">{place}º</span>
-                  </div>
-                </div>
+                <PodiumCard
+                  key={row.id}
+                  place={place}
+                  metric={metric as "profit" | "points"}
+                  championYear={isClosedChampion ? season : null}
+                  entry={{
+                    id: row.id,
+                    player_nickname: row.player_nickname,
+                    avatar_url: (row as any).avatar_url ?? null,
+                    total_points: row.total_points,
+                    total_profit: row.total_profit,
+                    games_played: row.games_played,
+                    wins: row.wins,
+                    level: 1,
+                    is_me: isMe,
+                  }}
+                />
               );
             })}
           </div>
