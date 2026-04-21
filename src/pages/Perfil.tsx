@@ -5,7 +5,7 @@ import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
 import { useAuth } from "@/context/AuthContext";
 import { formatBRL, formatDate, initials } from "@/lib/format";
-import { Edit3, Gamepad2, Sparkles, Target, TrendingUp, Trophy } from "lucide-react";
+import { Coins, Edit3, Gamepad2, Percent, RefreshCw, Sparkles, Target } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { computeXp, currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
 import EditProfileDialog from "@/components/EditProfileDialog";
@@ -88,13 +88,19 @@ export default function Perfil() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Partidas" value={String(stats?.games ?? 0)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
-        <StatCard label="Vitórias" value={String(stats?.wins ?? 0)} icon={<Trophy className="h-5 w-5" />} tone="gold" />
-        <StatCard label="Lucro total" value={formatBRL(stats?.totalProfit ?? 0)} icon={<TrendingUp className="h-5 w-5" />} tone="success" />
-        <StatCard label="KOs" value={String(stats?.kos ?? 0)} icon={<Target className="h-5 w-5" />} tone="destructive" />
-      </section>
-
+      {(() => {
+        const winsByProfit = stats?.history.filter((h) => h.profit_loss > 0).length ?? 0;
+        const winPct = stats && stats.games > 0 ? Math.round((winsByProfit / stats.games) * 100) : 0;
+        const buyRebuy = (stats?.buyIns ?? 0) + (stats?.rebuys ?? 0);
+        return (
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="Partidas" value={String(stats?.games ?? 0)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
+            <StatCard label="% Vitórias" value={`${winPct}%`} icon={<Percent className="h-5 w-5" />} tone="success" />
+            <StatCard label="Buy-ins + Rebuys" value={String(buyRebuy)} icon={<Coins className="h-5 w-5" />} tone="gold" />
+            <StatCard label="KOs" value={String(stats?.kos ?? 0)} icon={<Target className="h-5 w-5" />} tone="destructive" />
+          </section>
+        );
+      })()}
       <section className="nexus-card p-5">
         <h2 className="mb-3 text-lg font-bold">Histórico de partidas</h2>
         {!stats || stats.history.length === 0 ? (
