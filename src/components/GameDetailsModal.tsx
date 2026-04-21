@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,10 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { formatBRL, formatDateTime, initials } from "@/lib/format";
 import GameTypeBadge from "./GameTypeBadge";
+import GameReport from "./GameReport";
 import { calcParticipationPoints } from "@/lib/scoring";
-import { Pencil, Trash2, Trophy } from "lucide-react";
+import { Download, FileDown, Pencil, Trash2, Trophy } from "lucide-react";
+import { toJpeg } from "html-to-image";
 
 type GameRow = {
   id: string;
