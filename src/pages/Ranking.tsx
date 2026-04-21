@@ -53,6 +53,9 @@ export default function Ranking() {
   const [profilesForLink, setProfilesForLink] = useState<{ id: string; nickname: string | null; full_name: string | null }[]>([]);
   const [reportOpen, setReportOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [genAvatars, setGenAvatars] = useState(false);
+  const [closingSeason, setClosingSeason] = useState(false);
+  const [champions, setChampions] = useState<Record<number, { nickname: string; avatar_url: string | null }>>({});
   const reportRef = useRef<HTMLDivElement>(null);
 
   async function downloadReport() {
