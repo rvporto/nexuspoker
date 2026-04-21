@@ -203,7 +203,8 @@ export default function Dashboard() {
                     {season >= 2026 ? `${row.total_points} pts` : formatBRL(row.total_profit)}
                   </span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
