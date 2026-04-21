@@ -99,11 +99,56 @@ export default function Ranking() {
     setPendingRequests((data ?? []) as LinkRequest[]);
   }
 
-  useEffect(() => { loadAll(); }, []);
+  async function loadChampions() {
+    const { data } = await supabase
+      .from("season_champions")
+      .select("season_year, champion_nickname, champion_avatar_url");
+    const map: Record<number, { nickname: string; avatar_url: string | null }> = {};
+    (data ?? []).forEach((c: any) => {
+      map[c.season_year] = { nickname: c.champion_nickname, avatar_url: c.champion_avatar_url };
+    });
+    setChampions(map);
+  }
+
+  useEffect(() => { loadAll(); loadChampions(); }, []);
   useEffect(() => { loadPendingRequests(); }, [isAdmin]);
   useEffect(() => {
     if (season === null && seasons.length > 0) setSeason(seasons[0]);
   }, [seasons, season]);
+
+  async function generateMissingAvatars() {
+    setGenAvatars(true);
+    const { data, error } = await supabase.functions.invoke("auto-avatar", {
+      body: { mode: "batch", limit: 8 },
+    });
+    setGenAvatars(false);
+    if (error) { toast.error("Erro: " + error.message); return; }
+    const ok = (data?.results ?? []).filter((r: any) => r.ok).length;
+    toast.success(`${ok} avatar(es) gerado(s)`);
+    loadAll();
+  }
+
+  async function closeSeason() {
+    if (season === null || currentRows.length === 0) return;
+    if (!confirm(`Encerrar a temporada ${season}? O atual líder será marcado como Campeão.`)) return;
+    const champ = currentRows[0];
+    setClosingSeason(true);
+    const useProfit = season < 2026;
+    const { error } = await supabase.from("season_champions").upsert({
+      season_year: season,
+      champion_player_type: champ.player_type,
+      champion_player_ref_id: champ.player_ref_id,
+      champion_nickname: champ.player_nickname,
+      champion_avatar_url: (champ as any).avatar_url ?? null,
+      champion_metric_value: useProfit ? champ.total_profit : champ.total_points,
+      metric_mode: useProfit ? "profit" : "points",
+      closed_by: user?.id ?? null,
+    }, { onConflict: "season_year" });
+    setClosingSeason(false);
+    if (error) { toast.error("Erro: " + error.message); return; }
+    toast.success(`Temporada ${season} encerrada! ${champ.player_nickname} é o Campeão.`);
+    loadChampions();
+  }
 
   const currentRows = useMemo(
     () => rows.filter((r) => (r as any).season_year === season).sort((a, b) => a.position - b.position),
