@@ -9,8 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { initials } from "@/lib/format";
-import { Upload, Sparkles } from "lucide-react";
-import AiAvatarDialog from "./AiAvatarDialog";
+import { Upload } from "lucide-react";
 
 interface Props {
   open: boolean;
