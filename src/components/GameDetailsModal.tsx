@@ -10,7 +10,7 @@ import { formatBRL, formatDateTime, initials } from "@/lib/format";
 import GameTypeBadge from "./GameTypeBadge";
 import GameReport from "./GameReport";
 import { calcParticipationPoints } from "@/lib/scoring";
-import { Download, FileDown, Pencil, Trash2, Trophy } from "lucide-react";
+import { FileDown, Pencil, Trash2, Trophy } from "lucide-react";
 import { toJpeg } from "html-to-image";
 
 type GameRow = {
