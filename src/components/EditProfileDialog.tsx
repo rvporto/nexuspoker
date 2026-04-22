@@ -26,7 +26,6 @@ export default function EditProfileDialog({ open, onOpenChange, onSaved }: Props
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
 
   async function uploadFile(file: File) {
     if (!user) return;
@@ -39,27 +38,6 @@ export default function EditProfileDialog({ open, onOpenChange, onSaved }: Props
     setAvatarUrl(data.publicUrl);
     setUploading(false);
     toast.success("Avatar carregado");
-  }
-
-  async function handleAiAvatar(dataUrl: string) {
-    if (!user) return;
-    setUploading(true);
-    try {
-      const blob = await (await fetch(dataUrl)).blob();
-      const path = `${user.id}/avatar-ai-${Date.now()}.png`;
-      const { error } = await supabase.storage.from("avatars").upload(path, blob, {
-        upsert: true,
-        contentType: "image/png",
-      });
-      if (error) throw error;
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      setAvatarUrl(data.publicUrl);
-      toast.success("Avatar IA aplicado");
-    } catch (e: any) {
-      toast.error("Falha ao salvar avatar IA: " + (e?.message ?? ""));
-    } finally {
-      setUploading(false);
-    }
   }
 
   async function save() {
@@ -89,16 +67,16 @@ export default function EditProfileDialog({ open, onOpenChange, onSaved }: Props
   }
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle className="nexus-text-gold">Editar perfil</DialogTitle></DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle className="nexus-text-gold">Editar perfil</DialogTitle></DialogHeader>
 
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20 border-2 border-primary/60">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
-              <AvatarFallback className="bg-gradient-gold text-xl font-bold text-primary-foreground">
-                {initials(nickname || fullName || "?")}
+        <div className="flex items-center gap-4">
+          <Avatar className="h-20 w-20 border-2 border-primary/60">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
+            <AvatarFallback className="bg-gradient-gold text-xl font-bold text-primary-foreground">
+              {initials(nickname || fullName || "?")}
+            </AvatarFallback>
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
