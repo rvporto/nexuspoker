@@ -10,7 +10,7 @@ import { formatBRL, formatDateTime, initials } from "@/lib/format";
 import GameTypeBadge from "./GameTypeBadge";
 import GameReport from "./GameReport";
 import { calcParticipationPoints } from "@/lib/scoring";
-import { Download, FileDown, Pencil, Trash2, Trophy } from "lucide-react";
+import { FileDown, Pencil, Trash2, Trophy } from "lucide-react";
 import { toJpeg } from "html-to-image";
 
 type GameRow = {
@@ -56,9 +56,12 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
   const { isAdmin } = useAuth();
   const [game, setGame] = useState<GameRow | null>(null);
   const [parts, setParts] = useState<Participation[]>([]);
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   async function load() {
     if (!gameId) return;
@@ -68,8 +71,29 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
       supabase.from("game_participations").select("*").eq("game_id", gameId).order("position", { ascending: true, nullsFirst: false }),
     ]);
     setGame((g.data as GameRow) ?? null);
-    setParts((p.data as Participation[]) ?? []);
+    const participations = (p.data as Participation[]) ?? [];
+    setParts(participations);
+
+    // Busca avatares dos participantes (profiles + temporary_players)
+    const userIds = participations.map((x) => x.user_id).filter(Boolean) as string[];
+    const tempIds = participations.map((x) => x.temp_player_id).filter(Boolean) as string[];
+    const map: Record<string, string | null> = {};
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, avatar_url").in("id", userIds);
+      profs?.forEach((pr: any) => { map[`u:${pr.id}`] = pr.avatar_url; });
+    }
+    if (tempIds.length) {
+      const { data: temps } = await supabase.from("temporary_players").select("id, avatar_url").in("id", tempIds);
+      temps?.forEach((tp: any) => { map[`t:${tp.id}`] = tp.avatar_url; });
+    }
+    setAvatars(map);
     setLoading(false);
+  }
+
+  function avatarFor(p: Participation): string | null {
+    if (p.user_id) return avatars[`u:${p.user_id}`] ?? null;
+    if (p.temp_player_id) return avatars[`t:${p.temp_player_id}`] ?? null;
+    return null;
   }
 
   useEffect(() => { if (open && gameId) { setEditMode(false); load(); } }, [open, gameId]);
@@ -230,6 +254,36 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
     onOpenChange(false);
   }
 
+  async function downloadJpeg() {
+    if (!reportRef.current) return;
+    setDownloadingReport(true);
+    try {
+      const dataUrl = await toJpeg(reportRef.current, { quality: 0.95, pixelRatio: 2, backgroundColor: "#0a0a0a" });
+      const link = document.createElement("a");
+      link.download = `partida-${game?.name?.replace(/\s+/g, "-").toLowerCase() ?? "nexus"}.jpg`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Relatório da partida baixado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar JPEG: " + (e?.message ?? ""));
+    } finally {
+      setDownloadingReport(false);
+    }
+  }
+
+  const reportRows = parts.map((p) => ({
+    id: p.id,
+    player_nickname: p.player_nickname,
+    avatar_url: avatarFor(p),
+    position: p.position,
+    entries: p.entries,
+    rebuys: p.rebuys,
+    ko_points: p.ko_points,
+    final_amount: p.final_amount,
+    profit_loss: p.profit_loss,
+    ranking_points: p.ranking_points,
+  }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
@@ -387,6 +441,11 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
               </Button>
             </>
           )}
+          {game?.status === "finished" && (
+            <Button variant="outline" onClick={downloadJpeg} disabled={downloadingReport} className="border-primary/40 text-primary">
+              <FileDown className="h-4 w-4" /> {downloadingReport ? "Gerando..." : "Baixar JPEG"}
+            </Button>
+          )}
           {isAdmin && (
             <Button variant="outline" onClick={deleteGame} className="border-destructive/40 text-destructive">
               Apagar partida
@@ -394,6 +453,13 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
         </DialogFooter>
+
+        {/* Report off-screen usado para gerar JPEG */}
+        {game && game.status === "finished" && (
+          <div style={{ position: "fixed", left: -10000, top: 0, pointerEvents: "none" }}>
+            <GameReport ref={reportRef} game={game} rows={reportRows} />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
