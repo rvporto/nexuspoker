@@ -254,6 +254,36 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
     onOpenChange(false);
   }
 
+  async function downloadJpeg() {
+    if (!reportRef.current) return;
+    setDownloadingReport(true);
+    try {
+      const dataUrl = await toJpeg(reportRef.current, { quality: 0.95, pixelRatio: 2, backgroundColor: "#0a0a0a" });
+      const link = document.createElement("a");
+      link.download = `partida-${game?.name?.replace(/\s+/g, "-").toLowerCase() ?? "nexus"}.jpg`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Relatório da partida baixado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar JPEG: " + (e?.message ?? ""));
+    } finally {
+      setDownloadingReport(false);
+    }
+  }
+
+  const reportRows = parts.map((p) => ({
+    id: p.id,
+    player_nickname: p.player_nickname,
+    avatar_url: avatarFor(p),
+    position: p.position,
+    entries: p.entries,
+    rebuys: p.rebuys,
+    ko_points: p.ko_points,
+    final_amount: p.final_amount,
+    profit_loss: p.profit_loss,
+    ranking_points: p.ranking_points,
+  }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
