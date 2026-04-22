@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -7,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import RankMovementBadge from "@/components/RankMovementBadge";
 import RankingReport, { type ReportRow } from "@/components/RankingReport";
 import PodiumCard from "@/components/PodiumCard";
-import { formatBRL, initials } from "@/lib/format";
-import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, Sparkles, UserCheck } from "lucide-react";
+import SeasonTabs from "@/components/SeasonTabs";
+import { formatBRL, formatPoints, initials } from "@/lib/format";
+import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +53,6 @@ export default function Ranking() {
   const [profilesForLink, setProfilesForLink] = useState<{ id: string; nickname: string | null; full_name: string | null }[]>([]);
   const [reportOpen, setReportOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [genAvatars, setGenAvatars] = useState(false);
   const [closingSeason, setClosingSeason] = useState(false);
   const [champions, setChampions] = useState<Record<number, { nickname: string; avatar_url: string | null }>>({});
   const reportRef = useRef<HTMLDivElement>(null);
