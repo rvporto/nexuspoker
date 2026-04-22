@@ -441,6 +441,11 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
               </Button>
             </>
           )}
+          {game?.status === "finished" && (
+            <Button variant="outline" onClick={downloadJpeg} disabled={downloadingReport} className="border-primary/40 text-primary">
+              <FileDown className="h-4 w-4" /> {downloadingReport ? "Gerando..." : "Baixar JPEG"}
+            </Button>
+          )}
           {isAdmin && (
             <Button variant="outline" onClick={deleteGame} className="border-destructive/40 text-destructive">
               Apagar partida
@@ -448,6 +453,13 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
         </DialogFooter>
+
+        {/* Report off-screen usado para gerar JPEG */}
+        {game && game.status === "finished" && (
+          <div style={{ position: "fixed", left: -10000, top: 0, pointerEvents: "none" }}>
+            <GameReport ref={reportRef} game={game} rows={reportRows} />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
