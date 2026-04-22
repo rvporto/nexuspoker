@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { initials, formatBRL } from "@/lib/format";
+import { initials, formatBRL, formatPoints } from "@/lib/format";
 import { Crown, Medal, Award, Gamepad2, Target, TrendingUp } from "lucide-react";
 
 export type PodiumEntry = {
@@ -58,7 +58,7 @@ export default function PodiumCard({ place, entry, metric, championYear }: Props
   const meta = PLACE_META[place];
   const Icon = meta.icon;
   const valueText =
-    metric === "points" ? `${entry.total_points} pts` : formatBRL(entry.total_profit);
+    metric === "points" ? `${formatPoints(entry.total_points)} pts` : formatBRL(entry.total_profit);
   const winRate =
     entry.games_played > 0 ? Math.round((entry.wins / entry.games_played) * 100) : 0;
 
