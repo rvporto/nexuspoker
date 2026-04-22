@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { completeProfileSchema } from "@/lib/validation";
+import { getDefaultAvatar } from "@/lib/defaultAvatar";
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -47,38 +48,28 @@ export default function CompleteProfile() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    setSubmitting(true);
+    // Se ainda não tem avatar, atribui um padrão por gênero (ou aleatório).
+    const updatePayload: Record<string, any> = {
+      nickname: parsed.data.nickname,
+      phone: parsed.data.phone || null,
+      gender: parsed.data.gender ?? null,
+      profile_completed: true,
+    };
+    if (!profile?.avatar_url) {
+      updatePayload.avatar_url = getDefaultAvatar(parsed.data.gender ?? null);
+    }
     const { error } = await supabase
       .from("profiles")
-      .update({
-        nickname: parsed.data.nickname,
-        phone: parsed.data.phone || null,
-        gender: parsed.data.gender ?? null,
-        profile_completed: true,
-      })
+      .update(updatePayload)
       .eq("id", user.id);
     if (error) {
       setSubmitting(false);
       toast.error("Erro ao salvar perfil.");
       return;
     }
-    // Se ainda não tem avatar, dispara geração automática (não bloqueia)
-    if (!profile?.avatar_url) {
-      supabase.functions
-        .invoke("auto-avatar", {
-          body: {
-            mode: "single",
-            target: "user",
-            id: user.id,
-            gender: parsed.data.gender ?? null,
-          },
-        })
-        .then(() => refreshProfile())
-        .catch((e) => console.warn("auto-avatar failed", e));
-    }
     setSubmitting(false);
     await refreshProfile();
-    toast.success("Perfil salvo! Seu avatar está sendo gerado.");
+    toast.success("Perfil salvo!");
     navigate("/");
   }
 

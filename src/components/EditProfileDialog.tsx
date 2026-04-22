@@ -77,63 +77,59 @@ export default function EditProfileDialog({ open, onOpenChange, onSaved }: Props
             <AvatarFallback className="bg-gradient-gold text-xl font-bold text-primary-foreground">
               {initials(nickname || fullName || "?")}
             </AvatarFallback>
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col gap-2">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={uploading}
-                  onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
-                />
-                <Button asChild size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" disabled={uploading}>
-                  <span><Upload className="h-3 w-3" /> {uploading ? "Enviando..." : "Upload"}</span>
-                </Button>
-              </label>
-              <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen(true)}>
-                <Sparkles className="h-3 w-3" /> Avatar IA
+          </Avatar>
+          <div className="flex flex-col gap-2">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
+              />
+              <Button asChild size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" disabled={uploading}>
+                <span><Upload className="h-3 w-3" /> {uploading ? "Enviando..." : "Trocar foto"}</span>
               </Button>
-            </div>
+            </label>
+            <p className="text-[10px] text-muted-foreground max-w-[140px]">
+              Sem foto? Usamos um avatar padrão de acordo com o gênero.
+            </p>
           </div>
+        </div>
 
-          <div className="grid gap-3">
-            <div>
-              <Label htmlFor="nick">Nickname *</Label>
-              <Input id="nick" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Seu apelido" />
-            </div>
-            <div>
-              <Label htmlFor="fullname">Nome completo</Label>
-              <Input id="fullname" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
-            </div>
-            <div>
-              <Label>Gênero</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Masculino</SelectItem>
-                  <SelectItem value="female">Feminino</SelectItem>
-                  <SelectItem value="other">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="grid gap-3">
+          <div>
+            <Label htmlFor="nick">Nickname *</Label>
+            <Input id="nick" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Seu apelido" />
           </div>
+          <div>
+            <Label htmlFor="fullname">Nome completo</Label>
+            <Input id="fullname" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="phone">Telefone</Label>
+            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+          </div>
+          <div>
+            <Label>Gênero</Label>
+            <Select value={gender} onValueChange={setGender}>
+              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">Masculino</SelectItem>
+                <SelectItem value="female">Feminino</SelectItem>
+                <SelectItem value="other">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button onClick={save} disabled={saving} className="bg-gradient-gold text-primary-foreground">
-              {saving ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AiAvatarDialog open={aiOpen} onOpenChange={setAiOpen} onPick={handleAiAvatar} />
-    </>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={save} disabled={saving} className="bg-gradient-gold text-primary-foreground">
+            {saving ? "Salvando..." : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
