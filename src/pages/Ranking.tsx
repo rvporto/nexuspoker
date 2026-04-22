@@ -376,8 +376,18 @@ export default function Ranking() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-primary">
-                    {metric === "points" ? `${row.total_points} pts` : formatBRL(row.total_profit)}
+                  <div
+                    className={`font-bold ${
+                      metric === "points"
+                        ? "text-primary"
+                        : row.total_profit > 0
+                          ? "text-success"
+                          : row.total_profit < 0
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                    }`}
+                  >
+                    {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
                   </div>
                 </div>
               </div>
