@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatBRL, initials } from "@/lib/format";
+import SeasonTabs from "@/components/SeasonTabs";
+import { formatBRL, formatPoints, initials } from "@/lib/format";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
@@ -36,6 +36,7 @@ export default function Estatisticas() {
   const [rows, setRows] = useState<Row[]>([]);
   const [seasons, setSeasons] = useState<number[]>([]);
   const [season, setSeason] = useState<number | null>(null);
+  const [closedYears, setClosedYears] = useState<Set<number>>(new Set());
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>("position");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -49,11 +50,13 @@ export default function Estatisticas() {
       ys.sort((a, b) => b - a);
       setSeasons(ys);
       setRows(all);
-      const [{ count: p }, { count: t }] = await Promise.all([
+      const [{ count: p }, { count: t }, { data: champs }] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("temporary_players").select("*", { count: "exact", head: true }),
+        supabase.from("season_champions").select("season_year"),
       ]);
       setTotalPlayers((p ?? 0) + (t ?? 0));
+      setClosedYears(new Set(((champs ?? []) as { season_year: number }[]).map((c) => c.season_year)));
     })();
   }, []);
 
@@ -120,13 +123,7 @@ export default function Estatisticas() {
       </header>
 
       {seasons.length > 0 && season !== null && (
-        <Tabs value={String(season)} onValueChange={(v) => setSeason(Number(v))}>
-          <TabsList className="bg-secondary">
-            {seasons.map((s) => (
-              <TabsTrigger key={s} value={String(s)}>Temporada {s}</TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <SeasonTabs seasons={seasons} value={season} onChange={setSeason} closedYears={closedYears} />
       )}
 
       {seasonRows.length === 0 ? (
@@ -180,7 +177,7 @@ export default function Estatisticas() {
                   </td>
                   {showPoints && (
                     <td className="p-3 text-right text-primary font-semibold">
-                      {avgPoints(r).toFixed(1)}
+                      {formatPoints(avgPoints(r))}
                     </td>
                   )}
                 </tr>
