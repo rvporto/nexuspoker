@@ -56,9 +56,12 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
   const { isAdmin } = useAuth();
   const [game, setGame] = useState<GameRow | null>(null);
   const [parts, setParts] = useState<Participation[]>([]);
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   async function load() {
     if (!gameId) return;
