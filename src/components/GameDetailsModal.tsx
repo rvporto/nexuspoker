@@ -71,8 +71,29 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
       supabase.from("game_participations").select("*").eq("game_id", gameId).order("position", { ascending: true, nullsFirst: false }),
     ]);
     setGame((g.data as GameRow) ?? null);
-    setParts((p.data as Participation[]) ?? []);
+    const participations = (p.data as Participation[]) ?? [];
+    setParts(participations);
+
+    // Busca avatares dos participantes (profiles + temporary_players)
+    const userIds = participations.map((x) => x.user_id).filter(Boolean) as string[];
+    const tempIds = participations.map((x) => x.temp_player_id).filter(Boolean) as string[];
+    const map: Record<string, string | null> = {};
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, avatar_url").in("id", userIds);
+      profs?.forEach((pr: any) => { map[`u:${pr.id}`] = pr.avatar_url; });
+    }
+    if (tempIds.length) {
+      const { data: temps } = await supabase.from("temporary_players").select("id, avatar_url").in("id", tempIds);
+      temps?.forEach((tp: any) => { map[`t:${tp.id}`] = tp.avatar_url; });
+    }
+    setAvatars(map);
     setLoading(false);
+  }
+
+  function avatarFor(p: Participation): string | null {
+    if (p.user_id) return avatars[`u:${p.user_id}`] ?? null;
+    if (p.temp_player_id) return avatars[`t:${p.temp_player_id}`] ?? null;
+    return null;
   }
 
   useEffect(() => { if (open && gameId) { setEditMode(false); load(); } }, [open, gameId]);
