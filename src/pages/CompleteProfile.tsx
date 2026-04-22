@@ -49,18 +49,18 @@ export default function CompleteProfile() {
       return;
     }
     // Se ainda não tem avatar, atribui um padrão por gênero (ou aleatório).
-    const updatePayload: Record<string, any> = {
-      nickname: parsed.data.nickname,
-      phone: parsed.data.phone || null,
-      gender: parsed.data.gender ?? null,
-      profile_completed: true,
-    };
-    if (!profile?.avatar_url) {
-      updatePayload.avatar_url = getDefaultAvatar(parsed.data.gender ?? null);
-    }
+    const avatarToSave = profile?.avatar_url
+      ? profile.avatar_url
+      : getDefaultAvatar(parsed.data.gender ?? null);
     const { error } = await supabase
       .from("profiles")
-      .update(updatePayload)
+      .update({
+        nickname: parsed.data.nickname,
+        phone: parsed.data.phone || null,
+        gender: parsed.data.gender ?? null,
+        avatar_url: avatarToSave,
+        profile_completed: true,
+      })
       .eq("id", user.id);
     if (error) {
       setSubmitting(false);
