@@ -61,7 +61,8 @@ export function calcTournamentPoints({
 }: TournamentPointsInput): number {
   const pbt = getPBT(totalPlayers, position);
   const fm = getFM(totalActions);
-  return Math.round(pbt * fm + koPoints);
+  // Mantém precisão (FM pode produzir decimais como 1.2/1.4) — sem arredondamento.
+  return pbt * fm + koPoints;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -112,7 +113,8 @@ export function calcCashGamePoints({
   const profitInBI = buyInValue > 0 && profitLoss > 0 ? profitLoss / buyInValue : 0;
   const fp = profitLoss > 0 ? getFP(profitInBI) : 1.0;
   const total = pbc * fp + PRESENCE_BONUS + koPoints;
-  return Math.round(total * 10) / 10; // 1 casa decimal
+  // Mantém a precisão original (sem arredondar) — pontos podem ter casas decimais.
+  return total;
 }
 
 // ─────────────────────────────────────────────────────────────────────
