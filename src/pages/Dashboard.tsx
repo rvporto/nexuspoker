@@ -3,9 +3,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
+import SprintLeaderboard from "@/components/SprintLeaderboard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { formatBRL, formatDate, initials } from "@/lib/format";
+import { formatBRL, formatDate, formatPoints, initials } from "@/lib/format";
 import { computeXp, currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
 import { Award, Crown, Gamepad2, LogIn, Percent, Sparkles, Swords, Target, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -136,7 +137,7 @@ export default function Dashboard() {
         const winPct = stats.games > 0 ? Math.round((wins / stats.games) * 100) : 0;
         return (
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <StatCard label="Pontos temporada" value={String(Math.round(stats.totalPoints))} icon={<Sparkles className="h-5 w-5" />} tone="gold" />
+            <StatCard label="Pontos temporada" value={formatPoints(stats.totalPoints)} icon={<Sparkles className="h-5 w-5" />} tone="gold" />
             <StatCard label="Partidas" value={String(stats.games)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
             <StatCard label="% Vitórias" value={`${winPct}%`} icon={<Percent className="h-5 w-5" />} tone="success" />
             <StatCard label="Posição" value={myRank ? `#${myRank}` : "—"} icon={<Trophy className="h-5 w-5" />} tone="gold" />
@@ -144,6 +145,9 @@ export default function Dashboard() {
           </section>
         );
       })()}
+
+      <SprintLeaderboard seasonYear={season} currentUserId={user?.id ?? null} />
+
 
       <section className="nexus-card p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -176,7 +180,7 @@ export default function Dashboard() {
                         {isMe && <span className="nexus-chip bg-primary/20 px-1.5 text-[9px] font-bold text-primary">Você</span>}
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        {season >= 2026 ? `${row.total_points} pts` : formatBRL(row.total_profit)}
+                        {season >= 2026 ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
                       </div>
                     </div>
                     <div className={`${heights[idx]} w-full rounded-t-lg bg-gradient-gold flex items-start justify-center pt-1`}>
@@ -200,7 +204,7 @@ export default function Dashboard() {
                     )}
                   </div>
                   <span className="text-primary font-semibold">
-                    {season >= 2026 ? `${row.total_points} pts` : formatBRL(row.total_profit)}
+                    {season >= 2026 ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
                   </span>
                 </div>
                 );

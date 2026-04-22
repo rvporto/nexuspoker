@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -7,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import RankMovementBadge from "@/components/RankMovementBadge";
 import RankingReport, { type ReportRow } from "@/components/RankingReport";
 import PodiumCard from "@/components/PodiumCard";
-import { formatBRL, initials } from "@/lib/format";
-import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, Sparkles, UserCheck } from "lucide-react";
+import SeasonTabs from "@/components/SeasonTabs";
+import { formatBRL, formatPoints, initials } from "@/lib/format";
+import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +53,6 @@ export default function Ranking() {
   const [profilesForLink, setProfilesForLink] = useState<{ id: string; nickname: string | null; full_name: string | null }[]>([]);
   const [reportOpen, setReportOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [genAvatars, setGenAvatars] = useState(false);
   const [closingSeason, setClosingSeason] = useState(false);
   const [champions, setChampions] = useState<Record<number, { nickname: string; avatar_url: string | null }>>({});
   const reportRef = useRef<HTMLDivElement>(null);
@@ -116,17 +115,8 @@ export default function Ranking() {
     if (season === null && seasons.length > 0) setSeason(seasons[0]);
   }, [seasons, season]);
 
-  async function generateMissingAvatars() {
-    setGenAvatars(true);
-    const { data, error } = await supabase.functions.invoke("auto-avatar", {
-      body: { mode: "batch", limit: 8 },
-    });
-    setGenAvatars(false);
-    if (error) { toast.error("Erro: " + error.message); return; }
-    const ok = (data?.results ?? []).filter((r: any) => r.ok).length;
-    toast.success(`${ok} avatar(es) gerado(s)`);
-    loadAll();
-  }
+  const closedYears = useMemo(() => new Set(Object.keys(champions).map(Number)), [champions]);
+
 
   async function closeSeason() {
     if (season === null || currentRows.length === 0) return;
@@ -271,24 +261,13 @@ export default function Ranking() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {seasons.length > 0 && season !== null && (
-          <Tabs value={String(season)} onValueChange={(v) => setSeason(Number(v))}>
-            <TabsList className="bg-secondary">
-              {seasons.map((s) => (
-                <TabsTrigger key={s} value={String(s)}>Temporada {s}</TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <SeasonTabs seasons={seasons} value={season} onChange={setSeason} closedYears={closedYears} />
         )}
         <div className="flex flex-wrap gap-2">
           {isAdmin && (
-            <>
-              <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={genAvatars} onClick={generateMissingAvatars}>
-                <Sparkles className="h-4 w-4" /> {genAvatars ? "Gerando..." : "Gerar avatares faltantes"}
-              </Button>
-              <Button size="sm" variant="outline" className="border-primary/30 text-primary hover:bg-primary/10" disabled={closingSeason || currentRows.length === 0} onClick={closeSeason}>
-                <Flag className="h-4 w-4" /> {closingSeason ? "Encerrando..." : "Encerrar temporada"}
-              </Button>
-            </>
+            <Button size="sm" variant="outline" className="border-primary/30 text-primary hover:bg-primary/10" disabled={closingSeason || currentRows.length === 0 || (season !== null && closedYears.has(season))} onClick={closeSeason}>
+              <Flag className="h-4 w-4" /> {closingSeason ? "Encerrando..." : (season !== null && closedYears.has(season)) ? "Temporada encerrada" : "Encerrar temporada"}
+            </Button>
           )}
           <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => setReportOpen(true)}>
             <FileDown className="h-4 w-4" /> Relatório
@@ -397,8 +376,18 @@ export default function Ranking() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-primary">
-                    {metric === "points" ? `${row.total_points} pts` : formatBRL(row.total_profit)}
+                  <div
+                    className={`font-bold ${
+                      metric === "points"
+                        ? "text-primary"
+                        : row.total_profit > 0
+                          ? "text-success"
+                          : row.total_profit < 0
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                    }`}
+                  >
+                    {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
                   </div>
                 </div>
               </div>

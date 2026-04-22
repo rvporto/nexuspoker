@@ -28,3 +28,13 @@ export function initials(name: string) {
     .map((n) => n[0]?.toUpperCase())
     .join("");
 }
+
+/**
+ * Formata pontos preservando até 1 casa decimal quando necessário.
+ * 40 -> "40", 40.8 -> "40.8", 40.85 -> "40.9"
+ */
+export function formatPoints(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
