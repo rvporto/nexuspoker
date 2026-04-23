@@ -13,9 +13,14 @@ export type Profile = {
   gender: "male" | "female" | "other" | null;
   level: number;
   xp: number;
+  experience_points: number;
   profile_completed: boolean;
   current_rank: number | null;
   achievements: string[];
+  achievements_unlocked: string[];
+  achievements_rr_count: Record<string, number>;
+  achievements_rr_progress: Record<string, number>;
+  achievements_seasonal: Record<string, number[]>;
 };
 
 type AuthCtx = {
