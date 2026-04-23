@@ -340,7 +340,153 @@ Deno.serve(async (req) => {
       ),
     );
 
-    return json({ ok: true, total: rows.length, mode: useProfit ? "profit" : "points" });
+    // ─────────────────────────────────────────────────────────────────
+    // 9. Recalcula XP e conquistas de TODOS os usuários registrados,
+    //    varrendo histórico LIFETIME em ordem cronológica.
+    // ─────────────────────────────────────────────────────────────────
+    const { data: allFinishedGames } = await admin
+      .from("games")
+      .select("id, type, date, season_year, status")
+      .eq("status", "finished");
+    const allGames = (allFinishedGames ?? []) as GameLite[] & { status: string }[];
+    const gameMap: Record<string, GameLite> = {};
+    allGames.forEach((g) => { gameMap[g.id] = g; });
+
+    const allGameIds = allGames.map((g) => g.id);
+    let allParts: any[] = [];
+    if (allGameIds.length > 0) {
+      const { data: ap } = await admin
+        .from("game_participations")
+        .select("game_id, user_id, profit_loss, ko_points, is_winner, position")
+        .in("game_id", allGameIds)
+        .not("user_id", "is", null);
+      allParts = ap ?? [];
+    }
+
+    // Campeões oficiais por temporada (tabela season_champions)
+    const { data: champRows } = await admin
+      .from("season_champions")
+      .select("season_year, champion_player_type, champion_player_ref_id");
+    const championByUser = new Map<string, number[]>();
+    (champRows ?? []).forEach((c: any) => {
+      if (c.champion_player_type !== "user") return;
+      const arr = championByUser.get(c.champion_player_ref_id) ?? [];
+      arr.push(c.season_year);
+      championByUser.set(c.champion_player_ref_id, arr);
+    });
+
+    // Sprints vencidos por usuário (bloco de 5 partidas dentro de cada temporada)
+    const SPRINT_SIZE = 5;
+    const sprintsWonByUser = new Map<string, number>();
+    const seasonsList = Array.from(new Set(allGames.map((g) => g.season_year)));
+    for (const yr of seasonsList) {
+      const yrGames = allGames
+        .filter((g) => g.season_year === yr)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      // Apenas sprints COMPLETOS contam (5 partidas)
+      const totalCompleteSprints = Math.floor(yrGames.length / SPRINT_SIZE);
+      for (let s = 0; s < totalCompleteSprints; s++) {
+        const sprintIds = new Set(
+          yrGames.slice(s * SPRINT_SIZE, (s + 1) * SPRINT_SIZE).map((g) => g.id),
+        );
+        const totals = new Map<string, { points: number; profit: number }>();
+        allParts
+          .filter((p) => sprintIds.has(p.game_id) && p.user_id)
+          .forEach((p) => {
+            const cur = totals.get(p.user_id) ?? { points: 0, profit: 0 };
+            // Para sprinter usamos a métrica daquela temporada
+            cur.profit += Number(p.profit_loss ?? 0);
+            totals.set(p.user_id, cur);
+          });
+        // Líder do sprint = maior lucro (consistente com sprint UI quando profit)
+        // Para temporadas >=2026 também classificamos por pontos (recalcular do parts)
+        const usePoints = yr >= 2026;
+        // Recarregar pontos do sprint
+        if (usePoints) {
+          const pointsByUser = new Map<string, number>();
+          // Precisamos carregar ranking_points também — recarregar mais detalhado
+          const { data: sprintParts } = await admin
+            .from("game_participations")
+            .select("user_id, ranking_points, profit_loss")
+            .in("game_id", Array.from(sprintIds))
+            .not("user_id", "is", null);
+          (sprintParts ?? []).forEach((p: any) => {
+            pointsByUser.set(
+              p.user_id,
+              (pointsByUser.get(p.user_id) ?? 0) + Number(p.ranking_points ?? 0),
+            );
+          });
+          let bestUser: string | null = null;
+          let bestPts = -Infinity;
+          let bestProfit = -Infinity;
+          pointsByUser.forEach((pts, uid) => {
+            const prof = totals.get(uid)?.profit ?? 0;
+            if (pts > bestPts || (pts === bestPts && prof > bestProfit)) {
+              bestPts = pts;
+              bestProfit = prof;
+              bestUser = uid;
+            }
+          });
+          if (bestUser) sprintsWonByUser.set(bestUser, (sprintsWonByUser.get(bestUser) ?? 0) + 1);
+        } else {
+          let bestUser: string | null = null;
+          let bestProfit = -Infinity;
+          totals.forEach((v, uid) => {
+            if (v.profit > bestProfit) { bestProfit = v.profit; bestUser = uid; }
+          });
+          if (bestUser) sprintsWonByUser.set(bestUser, (sprintsWonByUser.get(bestUser) ?? 0) + 1);
+        }
+      }
+    }
+
+    // Agrupa participações por user_id, ordenado cronologicamente
+    const partsByUser = new Map<string, ParticipationLite[]>();
+    allParts
+      .filter((p) => p.user_id)
+      .sort((a, b) => {
+        const ga = gameMap[a.game_id]?.date ?? "";
+        const gb = gameMap[b.game_id]?.date ?? "";
+        return new Date(ga).getTime() - new Date(gb).getTime();
+      })
+      .forEach((p) => {
+        const arr = partsByUser.get(p.user_id) ?? [];
+        arr.push({
+          game_id: p.game_id,
+          profit_loss: Number(p.profit_loss ?? 0),
+          ko_points: Number(p.ko_points ?? 0),
+          is_winner: !!p.is_winner,
+          position: p.position ?? null,
+        });
+        partsByUser.set(p.user_id, arr);
+      });
+
+    // Atualiza cada usuário em paralelo
+    await Promise.all(
+      Array.from(partsByUser.entries()).map(([uid, userParts]) => {
+        const champYears = championByUser.get(uid) ?? [];
+        const sprintsWon = sprintsWonByUser.get(uid) ?? 0;
+        const result = calcAllAchievements(userParts, gameMap, champYears, sprintsWon);
+        return admin
+          .from("profiles")
+          .update({
+            experience_points: result.totalXP,
+            level: result.level,
+            xp: result.totalXP,
+            achievements_unlocked: result.achievements_unlocked,
+            achievements_rr_count: result.achievements_rr_count,
+            achievements_rr_progress: result.achievements_rr_progress,
+            achievements_seasonal: result.achievements_seasonal,
+          })
+          .eq("id", uid);
+      }),
+    );
+
+    return json({
+      ok: true,
+      total: rows.length,
+      mode: useProfit ? "profit" : "points",
+      xp_users_updated: partsByUser.size,
+    });
   } catch (err) {
     console.error(err);
     return json({ error: String(err) }, 500);
