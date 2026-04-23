@@ -81,13 +81,21 @@ export default function Ranking() {
     const { data: rk } = await supabase.from("public_rankings").select("*");
     const allRows = (rk ?? []) as Row[];
     const ys = Array.from(new Set(allRows.map((r) => (r as any).season_year as number)));
-    // include current year + game years (in case ranking ainda não existe)
     const { data: gamesYears } = await supabase.from("games").select("season_year");
     (gamesYears ?? []).forEach((g) => { if (!ys.includes(g.season_year)) ys.push(g.season_year); });
     if (ys.length === 0) ys.push(new Date().getFullYear());
     ys.sort((a, b) => b - a);
     setSeasons(ys);
     setRows(allRows);
+
+    // Levels dos jogadores registrados
+    const userIds = Array.from(new Set(allRows.filter((r) => r.player_type === "user").map((r) => r.player_ref_id)));
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, level").in("id", userIds);
+      setLevelMap(new Map((profs ?? []).map((p: any) => [p.id, p.level ?? 1])));
+    } else {
+      setLevelMap(new Map());
+    }
     setLoading(false);
   }
 
