@@ -184,9 +184,14 @@ export type Database = {
       profiles: {
         Row: {
           achievements: string[]
+          achievements_rr_count: Json
+          achievements_rr_progress: Json
+          achievements_seasonal: Json
+          achievements_unlocked: string[]
           avatar_url: string | null
           created_at: string
           current_rank: number | null
+          experience_points: number
           full_name: string | null
           gender: Database["public"]["Enums"]["player_gender"] | null
           id: string
@@ -199,9 +204,14 @@ export type Database = {
         }
         Insert: {
           achievements?: string[]
+          achievements_rr_count?: Json
+          achievements_rr_progress?: Json
+          achievements_seasonal?: Json
+          achievements_unlocked?: string[]
           avatar_url?: string | null
           created_at?: string
           current_rank?: number | null
+          experience_points?: number
           full_name?: string | null
           gender?: Database["public"]["Enums"]["player_gender"] | null
           id: string
@@ -214,9 +224,14 @@ export type Database = {
         }
         Update: {
           achievements?: string[]
+          achievements_rr_count?: Json
+          achievements_rr_progress?: Json
+          achievements_seasonal?: Json
+          achievements_unlocked?: string[]
           avatar_url?: string | null
           created_at?: string
           current_rank?: number | null
+          experience_points?: number
           full_name?: string | null
           gender?: Database["public"]["Enums"]["player_gender"] | null
           id?: string

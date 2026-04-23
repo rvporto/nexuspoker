@@ -7,6 +7,7 @@ import RankMovementBadge from "@/components/RankMovementBadge";
 import RankingReport, { type ReportRow } from "@/components/RankingReport";
 import PodiumCard from "@/components/PodiumCard";
 import SeasonTabs from "@/components/SeasonTabs";
+import LevelBadge from "@/components/LevelBadge";
 import { formatBRL, formatPoints, initials } from "@/lib/format";
 import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -55,6 +56,7 @@ export default function Ranking() {
   const [downloading, setDownloading] = useState(false);
   const [closingSeason, setClosingSeason] = useState(false);
   const [champions, setChampions] = useState<Record<number, { nickname: string; avatar_url: string | null }>>({});
+  const [levelMap, setLevelMap] = useState<Map<string, number>>(new Map());
   const reportRef = useRef<HTMLDivElement>(null);
 
   async function downloadReport() {
@@ -79,13 +81,21 @@ export default function Ranking() {
     const { data: rk } = await supabase.from("public_rankings").select("*");
     const allRows = (rk ?? []) as Row[];
     const ys = Array.from(new Set(allRows.map((r) => (r as any).season_year as number)));
-    // include current year + game years (in case ranking ainda não existe)
     const { data: gamesYears } = await supabase.from("games").select("season_year");
     (gamesYears ?? []).forEach((g) => { if (!ys.includes(g.season_year)) ys.push(g.season_year); });
     if (ys.length === 0) ys.push(new Date().getFullYear());
     ys.sort((a, b) => b - a);
     setSeasons(ys);
     setRows(allRows);
+
+    // Levels dos jogadores registrados
+    const userIds = Array.from(new Set(allRows.filter((r) => r.player_type === "user").map((r) => r.player_ref_id)));
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, level").in("id", userIds);
+      setLevelMap(new Map((profs ?? []).map((p: any) => [p.id, p.level ?? 1])));
+    } else {
+      setLevelMap(new Map());
+    }
     setLoading(false);
   }
 
@@ -309,7 +319,7 @@ export default function Ranking() {
                     total_profit: row.total_profit,
                     games_played: row.games_played,
                     wins: row.wins,
-                    level: 1,
+                    level: row.player_type === "user" ? (levelMap.get(row.player_ref_id) ?? 1) : 1,
                     is_me: isMe,
                   }}
                 />
@@ -345,6 +355,9 @@ export default function Ranking() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate font-semibold">{row.player_nickname}</span>
+                    {row.player_type === "user" && levelMap.get(row.player_ref_id) !== undefined && (
+                      <LevelBadge level={levelMap.get(row.player_ref_id)!} size="sm" />
+                    )}
                     {isMe && (
                       <span className="nexus-chip bg-primary/20 px-1.5 text-[10px] font-bold text-primary">Você</span>
                     )}

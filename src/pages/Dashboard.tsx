@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
 import SprintLeaderboard from "@/components/SprintLeaderboard";
+import LevelBadge from "@/components/LevelBadge";
+import LevelProgressCard from "@/components/LevelProgressCard";
+import AchievementsCard from "@/components/AchievementsCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatDate, formatPoints, initials } from "@/lib/format";
-import { computeXp, currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
-import { Award, Crown, Gamepad2, LogIn, Percent, Sparkles, Swords, Target, Trophy } from "lucide-react";
+import { currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
+import { calcLevel, XP_PER_LEVEL } from "@/lib/xpSystem";
+import { Crown, Gamepad2, LogIn, Percent, Sparkles, Swords, Target, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type RankRow = {
@@ -38,6 +42,7 @@ export default function Dashboard() {
   const [recent, setRecent] = useState<RecentGame[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [levelMap, setLevelMap] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     (async () => {
@@ -47,7 +52,20 @@ export default function Dashboard() {
         .eq("season_year", season)
         .order("position", { ascending: true })
         .limit(5);
-      setTop5((rk ?? []) as RankRow[]);
+      const top5Rows = (rk ?? []) as RankRow[];
+      setTop5(top5Rows);
+
+      // Buscar level dos jogadores registrados do top 5
+      const userIds = top5Rows.filter((r) => r.player_type === "user").map((r) => r.player_ref_id);
+      if (userIds.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, level")
+          .in("id", userIds);
+        setLevelMap(new Map((profs ?? []).map((p: any) => [p.id, p.level ?? 1])));
+      } else {
+        setLevelMap(new Map());
+      }
 
       const { data: gs } = await supabase
         .from("games")
@@ -85,7 +103,9 @@ export default function Dashboard() {
 
   const displayName = profile?.nickname || profile?.full_name || "Jogador";
   const fullName = profile?.full_name || displayName;
-  const xpInfo = stats ? computeXp(stats.totalPoints) : null;
+  const playerXp = profile?.experience_points ?? 0;
+  const playerLevel = profile?.level ?? calcLevel(playerXp);
+  const xpInLevel = playerXp % XP_PER_LEVEL;
 
   return (
     <div className="space-y-6">
@@ -100,14 +120,12 @@ export default function Dashboard() {
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="text-xs text-muted-foreground">Bem-vindo de volta,</div>
-              <h1 className="text-xl font-bold truncate">{displayName}</h1>
+              <h1 className="flex items-center gap-2 text-xl font-bold truncate">
+                <span className="truncate">{displayName}</span>
+                <LevelBadge level={playerLevel} size="md" />
+              </h1>
               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                {xpInfo && (
-                  <>
-                    <span className="nexus-chip bg-primary/15 text-primary">Nível {xpInfo.level}</span>
-                    <span>XP {xpInfo.xp} / {xpInfo.xpForNext}</span>
-                  </>
-                )}
+                <span>XP {xpInLevel} / {XP_PER_LEVEL}</span>
               </div>
             </div>
             <div className="hidden text-right sm:block">
@@ -146,9 +164,6 @@ export default function Dashboard() {
         );
       })()}
 
-      <SprintLeaderboard seasonYear={season} currentUserId={user?.id ?? null} />
-
-
       <section className="nexus-card p-5">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -168,6 +183,7 @@ export default function Dashboard() {
                 const place = idx === 1 ? 1 : idx === 0 ? 2 : 3;
                 const heights = ["h-20", "h-28", "h-16"];
                 const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
+                const lvl = row.player_type === "user" ? levelMap.get(row.player_ref_id) : undefined;
                 return (
                   <div key={row.id} className="flex flex-col items-center gap-2">
                     <Avatar className="h-12 w-12 border-2 border-primary/60">
@@ -177,6 +193,7 @@ export default function Dashboard() {
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         <div className="text-xs font-semibold truncate max-w-[80px]">{row.player_nickname}</div>
+                        {lvl !== undefined && <LevelBadge level={lvl} size="xs" />}
                         {isMe && <span className="nexus-chip bg-primary/20 px-1.5 text-[9px] font-bold text-primary">Você</span>}
                       </div>
                       <div className="text-[11px] text-muted-foreground">
@@ -193,11 +210,13 @@ export default function Dashboard() {
             <div className="divide-y divide-border">
               {top5.slice(3).map((row) => {
                 const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
+                const lvl = row.player_type === "user" ? levelMap.get(row.player_ref_id) : undefined;
                 return (
                 <div key={row.id} className="flex items-center justify-between py-2 text-sm">
                   <div className="flex items-center gap-3">
                     <span className="w-6 text-muted-foreground">{row.position}º</span>
                     <span className="font-medium">{row.player_nickname}</span>
+                    {lvl !== undefined && <LevelBadge level={lvl} size="xs" />}
                     {isMe && <span className="nexus-chip bg-primary/20 px-1.5 text-[9px] font-bold text-primary">Você</span>}
                     {row.player_type === "temp" && (
                       <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temp</span>
@@ -213,6 +232,8 @@ export default function Dashboard() {
           </>
         )}
       </section>
+
+      <SprintLeaderboard seasonYear={season} currentUserId={user?.id ?? null} />
 
       <section className="nexus-card p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -249,38 +270,15 @@ export default function Dashboard() {
         )}
       </section>
 
-      {isLoggedIn && xpInfo && (
-        <section className="nexus-card p-5">
-          <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
-            <Award className="h-5 w-5 text-primary" /> Progresso de nível
-          </h2>
-          <div className="flex items-center gap-5">
-            <div className="relative h-28 w-28">
-              <svg viewBox="0 0 36 36" className="h-full w-full">
-                <path className="stroke-secondary" strokeWidth="3" fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path className="stroke-primary" strokeWidth="3" strokeLinecap="round" fill="none"
-                  strokeDasharray={`${xpInfo.progress}, 100`}
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold nexus-text-gold">{xpInfo.level}</span>
-                <span className="text-[10px] text-muted-foreground">Nível</span>
-              </div>
-            </div>
-            <div className="flex-1">
-              <div className="mb-2 flex justify-between text-sm">
-                <span className="text-muted-foreground">XP</span>
-                <span className="font-semibold">{xpInfo.xp} / {xpInfo.xpForNext}</span>
-              </div>
-              <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                <div className="h-full bg-gradient-gold" style={{ width: `${xpInfo.progress}%` }} />
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                {Math.max(0, xpInfo.xpForNext - xpInfo.xp)} XP para o próximo nível
-              </p>
-            </div>
-          </div>
+      {isLoggedIn && profile && (
+        <section className="grid gap-4 lg:grid-cols-2">
+          <LevelProgressCard experiencePoints={playerXp} level={playerLevel} />
+          <AchievementsCard
+            achievementsUnlocked={profile.achievements_unlocked ?? []}
+            achievementsRrCount={profile.achievements_rr_count ?? {}}
+            achievementsRrProgress={profile.achievements_rr_progress ?? {}}
+            achievementsSeasonal={profile.achievements_seasonal ?? {}}
+          />
         </section>
       )}
     </div>

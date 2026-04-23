@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { initials, formatBRL, formatPoints } from "@/lib/format";
+import LevelBadge from "@/components/LevelBadge";
 import { Crown, Medal, Award, Gamepad2, Target, TrendingUp } from "lucide-react";
 
 export type PodiumEntry = {
@@ -108,6 +109,7 @@ export default function PodiumCard({ place, entry, metric, championYear }: Props
             <span className="truncate text-sm font-bold sm:text-base">
               {entry.player_nickname}
             </span>
+            {entry.level !== undefined && <LevelBadge level={entry.level} size="xs" />}
             {entry.is_me && (
               <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-primary">
                 Você

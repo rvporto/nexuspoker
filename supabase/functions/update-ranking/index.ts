@@ -1,8 +1,159 @@
 // Edge function: update-ranking
 // Recalcula public_rankings para uma temporada agrupando participações finalizadas
 // por player_ref (user_id ou temp_player_id). Salva prev_position para mostrar variação.
+// Também recalcula XP e conquistas de TODOS os jogadores registrados, varrendo o
+// histórico completo cronologicamente (necessário para streaks: Consistente, Back-to-Back).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+// ─────────────────────────────────────────────────────────────────────
+// Sistema de XP e Conquistas (espelhado de src/lib/xpSystem.ts)
+// ─────────────────────────────────────────────────────────────────────
+const XP_PER_LEVEL = 1000;
+const calcLevel = (xp: number) => Math.max(1, Math.floor((xp || 0) / XP_PER_LEVEL) + 1);
+
+const XP_REWARDS = {
+  participation: 100,
+  cash_profit: 200,
+  tournament_top3: 300,
+  ko: 10,
+};
+
+const ACHIEVEMENT_DEFINITIONS: Record<
+  string,
+  { type: "unique" | "rr" | "seasonal"; xp: number; threshold?: number }
+> = {
+  aprendiz: { type: "unique", xp: 500, threshold: 10 },
+  engajado: { type: "unique", xp: 1000, threshold: 25 },
+  veterano: { type: "unique", xp: 500, threshold: 50 },
+  vencedor_rr: { type: "rr", xp: 1000, threshold: 5 },
+  cashman_rr: { type: "rr", xp: 500, threshold: 5 },
+  consistente_rr: { type: "rr", xp: 300, threshold: 3 },
+  btb_champion_rr: { type: "rr", xp: 500, threshold: 2 },
+  sprinter_rr: { type: "rr", xp: 400, threshold: 1 },
+  soberano_rr: { type: "seasonal", xp: 5000 },
+};
+
+interface ParticipationLite {
+  game_id: string;
+  profit_loss: number;
+  ko_points: number;
+  is_winner: boolean;
+  position: number | null;
+}
+interface GameLite {
+  id: string;
+  type: "tournament" | "cash";
+  date: string;
+  season_year: number;
+}
+
+function calcParticipationXP(p: ParticipationLite, g?: GameLite): number {
+  if (!g) return 0;
+  let xp = XP_REWARDS.participation;
+  if (g.type === "cash" && (p.profit_loss || 0) > 0) xp += XP_REWARDS.cash_profit;
+  if (g.type === "tournament" && p.position && p.position >= 1 && p.position <= 3)
+    xp += XP_REWARDS.tournament_top3;
+  xp += (p.ko_points || 0) * XP_REWARDS.ko;
+  return xp;
+}
+
+function calcAllAchievements(
+  participations: ParticipationLite[],
+  gameMap: Record<string, GameLite>,
+  seasonChampionYears: number[],
+  sprintsWon: number,
+) {
+  let baseXP = 0;
+  let achievementXP = 0;
+  const unlocked = new Set<string>();
+  const rrCount: Record<string, number> = {};
+  const rrProgress: Record<string, number> = {};
+
+  let totalGames = 0;
+  let tournamentWins = 0;
+  let cashProfitGames = 0;
+  let consecutiveProfit = 0;
+  let consecutiveTournamentWins = 0;
+
+  for (const p of participations) {
+    const game = gameMap[p.game_id];
+    if (!game) continue;
+
+    baseXP += calcParticipationXP(p, game);
+    totalGames += 1;
+    const isProfit = (p.profit_loss || 0) > 0;
+
+    if (isProfit) {
+      consecutiveProfit += 1;
+      if (consecutiveProfit >= 3) {
+        consecutiveProfit = 0;
+        rrCount.consistente_rr = (rrCount.consistente_rr || 0) + 1;
+        achievementXP += ACHIEVEMENT_DEFINITIONS.consistente_rr.xp;
+      }
+    } else {
+      consecutiveProfit = 0;
+    }
+
+    if (game.type === "cash" && isProfit) {
+      cashProfitGames += 1;
+      const times = Math.floor(cashProfitGames / 5);
+      const prev = rrCount.cashman_rr || 0;
+      if (times > prev) {
+        achievementXP += (times - prev) * ACHIEVEMENT_DEFINITIONS.cashman_rr.xp;
+        rrCount.cashman_rr = times;
+      }
+    }
+
+    if (game.type === "tournament" && p.is_winner) {
+      tournamentWins += 1;
+      const times = Math.floor(tournamentWins / 5);
+      const prev = rrCount.vencedor_rr || 0;
+      if (times > prev) {
+        achievementXP += (times - prev) * ACHIEVEMENT_DEFINITIONS.vencedor_rr.xp;
+        rrCount.vencedor_rr = times;
+      }
+      consecutiveTournamentWins += 1;
+      if (consecutiveTournamentWins >= 2) {
+        rrCount.btb_champion_rr = (rrCount.btb_champion_rr || 0) + 1;
+        achievementXP += ACHIEVEMENT_DEFINITIONS.btb_champion_rr.xp;
+        consecutiveTournamentWins = 0;
+      }
+    } else if (game.type === "tournament") {
+      consecutiveTournamentWins = 0;
+    }
+  }
+
+  if (totalGames >= 10) { unlocked.add("aprendiz"); achievementXP += ACHIEVEMENT_DEFINITIONS.aprendiz.xp; }
+  if (totalGames >= 25) { unlocked.add("engajado"); achievementXP += ACHIEVEMENT_DEFINITIONS.engajado.xp; }
+  if (totalGames >= 50) { unlocked.add("veterano"); achievementXP += ACHIEVEMENT_DEFINITIONS.veterano.xp; }
+
+  if (sprintsWon > 0) {
+    rrCount.sprinter_rr = sprintsWon;
+    achievementXP += sprintsWon * ACHIEVEMENT_DEFINITIONS.sprinter_rr.xp;
+  }
+
+  rrProgress.vencedor_rr = tournamentWins % 5;
+  rrProgress.cashman_rr = cashProfitGames % 5;
+  rrProgress.consistente_rr = consecutiveProfit;
+  rrProgress.btb_champion_rr = consecutiveTournamentWins;
+
+  const seasonalMap: Record<string, number[]> = {};
+  if (seasonChampionYears.length > 0) {
+    seasonalMap.soberano_rr = [...seasonChampionYears].sort();
+    achievementXP += seasonChampionYears.length * ACHIEVEMENT_DEFINITIONS.soberano_rr.xp;
+  }
+
+  const totalXP = baseXP + achievementXP;
+  return {
+    totalXP,
+    level: calcLevel(totalXP),
+    achievements_unlocked: [...unlocked],
+    achievements_rr_count: rrCount,
+    achievements_rr_progress: rrProgress,
+    achievements_seasonal: seasonalMap,
+  };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -189,7 +340,153 @@ Deno.serve(async (req) => {
       ),
     );
 
-    return json({ ok: true, total: rows.length, mode: useProfit ? "profit" : "points" });
+    // ─────────────────────────────────────────────────────────────────
+    // 9. Recalcula XP e conquistas de TODOS os usuários registrados,
+    //    varrendo histórico LIFETIME em ordem cronológica.
+    // ─────────────────────────────────────────────────────────────────
+    const { data: allFinishedGames } = await admin
+      .from("games")
+      .select("id, type, date, season_year, status")
+      .eq("status", "finished");
+    const allGames = (allFinishedGames ?? []) as GameLite[] & { status: string }[];
+    const gameMap: Record<string, GameLite> = {};
+    allGames.forEach((g) => { gameMap[g.id] = g; });
+
+    const allGameIds = allGames.map((g) => g.id);
+    let allParts: any[] = [];
+    if (allGameIds.length > 0) {
+      const { data: ap } = await admin
+        .from("game_participations")
+        .select("game_id, user_id, profit_loss, ko_points, is_winner, position")
+        .in("game_id", allGameIds)
+        .not("user_id", "is", null);
+      allParts = ap ?? [];
+    }
+
+    // Campeões oficiais por temporada (tabela season_champions)
+    const { data: champRows } = await admin
+      .from("season_champions")
+      .select("season_year, champion_player_type, champion_player_ref_id");
+    const championByUser = new Map<string, number[]>();
+    (champRows ?? []).forEach((c: any) => {
+      if (c.champion_player_type !== "user") return;
+      const arr = championByUser.get(c.champion_player_ref_id) ?? [];
+      arr.push(c.season_year);
+      championByUser.set(c.champion_player_ref_id, arr);
+    });
+
+    // Sprints vencidos por usuário (bloco de 5 partidas dentro de cada temporada)
+    const SPRINT_SIZE = 5;
+    const sprintsWonByUser = new Map<string, number>();
+    const seasonsList = Array.from(new Set(allGames.map((g) => g.season_year)));
+    for (const yr of seasonsList) {
+      const yrGames = allGames
+        .filter((g) => g.season_year === yr)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      // Apenas sprints COMPLETOS contam (5 partidas)
+      const totalCompleteSprints = Math.floor(yrGames.length / SPRINT_SIZE);
+      for (let s = 0; s < totalCompleteSprints; s++) {
+        const sprintIds = new Set(
+          yrGames.slice(s * SPRINT_SIZE, (s + 1) * SPRINT_SIZE).map((g) => g.id),
+        );
+        const totals = new Map<string, { points: number; profit: number }>();
+        allParts
+          .filter((p) => sprintIds.has(p.game_id) && p.user_id)
+          .forEach((p) => {
+            const cur = totals.get(p.user_id) ?? { points: 0, profit: 0 };
+            // Para sprinter usamos a métrica daquela temporada
+            cur.profit += Number(p.profit_loss ?? 0);
+            totals.set(p.user_id, cur);
+          });
+        // Líder do sprint = maior lucro (consistente com sprint UI quando profit)
+        // Para temporadas >=2026 também classificamos por pontos (recalcular do parts)
+        const usePoints = yr >= 2026;
+        // Recarregar pontos do sprint
+        if (usePoints) {
+          const pointsByUser = new Map<string, number>();
+          // Precisamos carregar ranking_points também — recarregar mais detalhado
+          const { data: sprintParts } = await admin
+            .from("game_participations")
+            .select("user_id, ranking_points, profit_loss")
+            .in("game_id", Array.from(sprintIds))
+            .not("user_id", "is", null);
+          (sprintParts ?? []).forEach((p: any) => {
+            pointsByUser.set(
+              p.user_id,
+              (pointsByUser.get(p.user_id) ?? 0) + Number(p.ranking_points ?? 0),
+            );
+          });
+          let bestUser: string | null = null;
+          let bestPts = -Infinity;
+          let bestProfit = -Infinity;
+          pointsByUser.forEach((pts, uid) => {
+            const prof = totals.get(uid)?.profit ?? 0;
+            if (pts > bestPts || (pts === bestPts && prof > bestProfit)) {
+              bestPts = pts;
+              bestProfit = prof;
+              bestUser = uid;
+            }
+          });
+          if (bestUser) sprintsWonByUser.set(bestUser, (sprintsWonByUser.get(bestUser) ?? 0) + 1);
+        } else {
+          let bestUser: string | null = null;
+          let bestProfit = -Infinity;
+          totals.forEach((v, uid) => {
+            if (v.profit > bestProfit) { bestProfit = v.profit; bestUser = uid; }
+          });
+          if (bestUser) sprintsWonByUser.set(bestUser, (sprintsWonByUser.get(bestUser) ?? 0) + 1);
+        }
+      }
+    }
+
+    // Agrupa participações por user_id, ordenado cronologicamente
+    const partsByUser = new Map<string, ParticipationLite[]>();
+    allParts
+      .filter((p) => p.user_id)
+      .sort((a, b) => {
+        const ga = gameMap[a.game_id]?.date ?? "";
+        const gb = gameMap[b.game_id]?.date ?? "";
+        return new Date(ga).getTime() - new Date(gb).getTime();
+      })
+      .forEach((p) => {
+        const arr = partsByUser.get(p.user_id) ?? [];
+        arr.push({
+          game_id: p.game_id,
+          profit_loss: Number(p.profit_loss ?? 0),
+          ko_points: Number(p.ko_points ?? 0),
+          is_winner: !!p.is_winner,
+          position: p.position ?? null,
+        });
+        partsByUser.set(p.user_id, arr);
+      });
+
+    // Atualiza cada usuário em paralelo
+    await Promise.all(
+      Array.from(partsByUser.entries()).map(([uid, userParts]) => {
+        const champYears = championByUser.get(uid) ?? [];
+        const sprintsWon = sprintsWonByUser.get(uid) ?? 0;
+        const result = calcAllAchievements(userParts, gameMap, champYears, sprintsWon);
+        return admin
+          .from("profiles")
+          .update({
+            experience_points: result.totalXP,
+            level: result.level,
+            xp: result.totalXP,
+            achievements_unlocked: result.achievements_unlocked,
+            achievements_rr_count: result.achievements_rr_count,
+            achievements_rr_progress: result.achievements_rr_progress,
+            achievements_seasonal: result.achievements_seasonal,
+          })
+          .eq("id", uid);
+      }),
+    );
+
+    return json({
+      ok: true,
+      total: rows.length,
+      mode: useProfit ? "profit" : "points",
+      xp_users_updated: partsByUser.size,
+    });
   } catch (err) {
     console.error(err);
     return json({ error: String(err) }, 500);

@@ -3,11 +3,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
+import LevelBadge from "@/components/LevelBadge";
+import LevelProgressCard from "@/components/LevelProgressCard";
+import AchievementsCard from "@/components/AchievementsCard";
 import { useAuth } from "@/context/AuthContext";
 import { formatBRL, formatDate, initials } from "@/lib/format";
-import { Coins, Edit3, Gamepad2, Percent, Sparkles, Target } from "lucide-react";
+import { Coins, ChevronDown, ChevronUp, Edit3, Gamepad2, Percent, Sparkles, Target } from "lucide-react";
 import { Navigate } from "react-router-dom";
-import { computeXp, currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
+import { currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
+import { calcLevel } from "@/lib/xpSystem";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import AiAvatarDialog from "@/components/AiAvatarDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +23,7 @@ export default function Perfil() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [showAllGames, setShowAllGames] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -31,9 +36,8 @@ export default function Perfil() {
 
   const displayName = profile.nickname || profile.full_name || "Jogador";
   const fullName = profile.full_name || displayName;
-  const seasonStats = stats?.history.filter((h) => h.season_year === season) ?? [];
-  const seasonPoints = seasonStats.reduce((s, h) => s + h.ranking_points, 0);
-  const xpInfo = computeXp(seasonPoints);
+  const playerXp = profile.experience_points ?? 0;
+  const playerLevel = profile.level ?? calcLevel(playerXp);
 
   async function handleAiAvatarPick(dataUrl: string) {
     if (!user) return;
@@ -57,6 +61,9 @@ export default function Perfil() {
     }
   }
 
+  const historyToShow = showAllGames ? (stats?.history ?? []) : (stats?.history ?? []).slice(0, 5);
+  const hiddenCount = (stats?.history.length ?? 0) - historyToShow.length;
+
   return (
     <div className="space-y-5">
       <section className="nexus-card p-5">
@@ -69,11 +76,14 @@ export default function Perfil() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-2xl font-bold nexus-text-gold">{displayName}</h1>
+              <h1 className="flex items-center gap-2 text-2xl font-bold nexus-text-gold">
+                <span>{displayName}</span>
+                <LevelBadge level={playerLevel} size="md" />
+              </h1>
               <p className="text-sm text-muted-foreground">{fullName}</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <span className="nexus-chip bg-primary/15 text-primary">Nível {xpInfo.level}</span>
-                <span className="nexus-chip bg-info/15 text-info">XP {xpInfo.xp}/{xpInfo.xpForNext}</span>
+                <span className="nexus-chip bg-primary/15 text-primary">Nível {playerLevel}</span>
+                <span className="nexus-chip bg-info/15 text-info">XP {playerXp.toLocaleString("pt-BR")}</span>
               </div>
             </div>
           </div>
@@ -106,31 +116,55 @@ export default function Perfil() {
         {!stats || stats.history.length === 0 ? (
           <div className="py-6 text-center text-sm text-muted-foreground">Você ainda não participou de nenhuma partida.</div>
         ) : (
-          <div className="divide-y divide-border">
-            {stats.history.map((h) => (
-              <div key={h.game_id} className="flex items-center justify-between py-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{h.game_name}</span>
-                    <GameTypeBadge type={h.game_type} />
-                    {h.position && (
-                      <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">{h.position}º</span>
-                    )}
+          <>
+            <div className="divide-y divide-border">
+              {historyToShow.map((h) => (
+                <div key={h.game_id} className="flex items-center justify-between py-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{h.game_name}</span>
+                      <GameTypeBadge type={h.game_type} />
+                      {h.position && (
+                        <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">{h.position}º</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDate(h.date)} · Temporada {h.season_year} · {h.ranking_points} pts
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatDate(h.date)} · Temporada {h.season_year} · {h.ranking_points} pts
+                  <div className="text-right">
+                    <div className="text-[11px] text-muted-foreground">Resultado</div>
+                    <div className={`font-bold ${h.profit_loss >= 0 ? "text-success" : "text-destructive"}`}>
+                      {h.profit_loss >= 0 ? "+" : ""}{formatBRL(h.profit_loss)}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-[11px] text-muted-foreground">Resultado</div>
-                  <div className={`font-bold ${h.profit_loss >= 0 ? "text-success" : "text-destructive"}`}>
-                    {h.profit_loss >= 0 ? "+" : ""}{formatBRL(h.profit_loss)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            {stats.history.length > 5 && (
+              <button
+                onClick={() => setShowAllGames((v) => !v)}
+                className="mx-auto mt-3 flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                {showAllGames ? (
+                  <><ChevronUp className="h-3 w-3" /> Mostrar apenas as últimas 5</>
+                ) : (
+                  <><ChevronDown className="h-3 w-3" /> Ver todas ({hiddenCount} ocultas)</>
+                )}
+              </button>
+            )}
+          </>
         )}
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <LevelProgressCard experiencePoints={playerXp} level={playerLevel} />
+        <AchievementsCard
+          achievementsUnlocked={profile.achievements_unlocked ?? []}
+          achievementsRrCount={profile.achievements_rr_count ?? {}}
+          achievementsRrProgress={profile.achievements_rr_progress ?? {}}
+          achievementsSeasonal={profile.achievements_seasonal ?? {}}
+        />
       </section>
 
       <EditProfileDialog open={editOpen} onOpenChange={setEditOpen} />
