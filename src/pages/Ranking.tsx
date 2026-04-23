@@ -7,6 +7,7 @@ import RankMovementBadge from "@/components/RankMovementBadge";
 import RankingReport, { type ReportRow } from "@/components/RankingReport";
 import PodiumCard from "@/components/PodiumCard";
 import SeasonTabs from "@/components/SeasonTabs";
+import LevelBadge from "@/components/LevelBadge";
 import { formatBRL, formatPoints, initials } from "@/lib/format";
 import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
