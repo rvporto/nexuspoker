@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPoints, initials } from "@/lib/format";
+import LevelBadge from "@/components/LevelBadge";
 import { Medal, Zap } from "lucide-react";
 
 const SPRINT_SIZE = 5;
@@ -22,6 +23,7 @@ type LeaderEntry = {
   player_ref_id: string;
   nickname: string;
   avatar_url: string | null;
+  level: number | null;
   points: number;
   profit: number;
   games_in_sprint: number;
@@ -34,7 +36,7 @@ type Props = {
 
 export default function SprintLeaderboard({ seasonYear, currentUserId }: Props) {
   const [parts, setParts] = useState<ParticipationRow[]>([]);
-  const [profileMap, setProfileMap] = useState<Map<string, { nickname: string | null; avatar_url: string | null }>>(new Map());
+  const [profileMap, setProfileMap] = useState<Map<string, { nickname: string | null; avatar_url: string | null; level: number | null }>>(new Map());
   const [tempMap, setTempMap] = useState<Map<string, { nickname: string; avatar_url: string | null }>>(new Map());
   const [loading, setLoading] = useState(true);
 
@@ -52,10 +54,10 @@ export default function SprintLeaderboard({ seasonYear, currentUserId }: Props) 
       const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter(Boolean) as string[]));
       const tempIds = Array.from(new Set(rows.map((r) => r.temp_player_id).filter(Boolean) as string[]));
       const [{ data: profs }, { data: temps }] = await Promise.all([
-        userIds.length ? supabase.from("profiles").select("id, nickname, avatar_url").in("id", userIds) : Promise.resolve({ data: [] as any[] }),
+        userIds.length ? supabase.from("profiles").select("id, nickname, avatar_url, level").in("id", userIds) : Promise.resolve({ data: [] as any[] }),
         tempIds.length ? supabase.from("temporary_players").select("id, nickname, avatar_url").in("id", tempIds) : Promise.resolve({ data: [] as any[] }),
       ]);
-      setProfileMap(new Map((profs ?? []).map((p: any) => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url }])));
+      setProfileMap(new Map((profs ?? []).map((p: any) => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url, level: p.level ?? 1 }])));
       setTempMap(new Map((temps ?? []).map((p: any) => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url }])));
       setLoading(false);
     })();
@@ -96,6 +98,7 @@ export default function SprintLeaderboard({ seasonYear, currentUserId }: Props) 
         player_ref_id: refId,
         nickname: src?.nickname || p.player_nickname,
         avatar_url: src?.avatar_url ?? null,
+        level: isUser ? ((src as any)?.level ?? null) : null,
         points: 0,
         profit: 0,
         games_in_sprint: 0,
@@ -184,6 +187,7 @@ export default function SprintLeaderboard({ seasonYear, currentUserId }: Props) 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm font-semibold">{row.nickname}</span>
+                    {row.level !== null && <LevelBadge level={row.level} size="xs" />}
                     {isMe && (
                       <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-primary">
                         Você
