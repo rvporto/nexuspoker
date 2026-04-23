@@ -56,6 +56,7 @@ export default function Ranking() {
   const [downloading, setDownloading] = useState(false);
   const [closingSeason, setClosingSeason] = useState(false);
   const [champions, setChampions] = useState<Record<number, { nickname: string; avatar_url: string | null }>>({});
+  const [levelMap, setLevelMap] = useState<Map<string, number>>(new Map());
   const reportRef = useRef<HTMLDivElement>(null);
 
   async function downloadReport() {
