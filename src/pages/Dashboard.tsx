@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [recent, setRecent] = useState<RecentGame[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [levelMap, setLevelMap] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     (async () => {
@@ -51,7 +52,20 @@ export default function Dashboard() {
         .eq("season_year", season)
         .order("position", { ascending: true })
         .limit(5);
-      setTop5((rk ?? []) as RankRow[]);
+      const top5Rows = (rk ?? []) as RankRow[];
+      setTop5(top5Rows);
+
+      // Buscar level dos jogadores registrados do top 5
+      const userIds = top5Rows.filter((r) => r.player_type === "user").map((r) => r.player_ref_id);
+      if (userIds.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, level")
+          .in("id", userIds);
+        setLevelMap(new Map((profs ?? []).map((p: any) => [p.id, p.level ?? 1])));
+      } else {
+        setLevelMap(new Map());
+      }
 
       const { data: gs } = await supabase
         .from("games")
