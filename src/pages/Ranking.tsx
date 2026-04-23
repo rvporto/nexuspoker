@@ -319,7 +319,7 @@ export default function Ranking() {
                     total_profit: row.total_profit,
                     games_played: row.games_played,
                     wins: row.wins,
-                    level: 1,
+                    level: row.player_type === "user" ? (levelMap.get(row.player_ref_id) ?? 1) : 1,
                     is_me: isMe,
                   }}
                 />
@@ -355,6 +355,9 @@ export default function Ranking() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate font-semibold">{row.player_nickname}</span>
+                    {row.player_type === "user" && levelMap.get(row.player_ref_id) !== undefined && (
+                      <LevelBadge level={levelMap.get(row.player_ref_id)!} size="sm" />
+                    )}
                     {isMe && (
                       <span className="nexus-chip bg-primary/20 px-1.5 text-[10px] font-bold text-primary">Você</span>
                     )}
