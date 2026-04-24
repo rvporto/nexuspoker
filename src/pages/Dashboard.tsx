@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import StatCard from "@/components/StatCard";
 import GameTypeBadge from "@/components/GameTypeBadge";
 import SprintLeaderboard from "@/components/SprintLeaderboard";
 import LevelBadge from "@/components/LevelBadge";
 import LevelProgressCard from "@/components/LevelProgressCard";
 import AchievementsCard from "@/components/AchievementsCard";
+import TopFivePodium, { type TopRow } from "@/components/TopFivePodium";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatDate, formatPoints, initials } from "@/lib/format";
 import { currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
 import { calcLevel, XP_PER_LEVEL } from "@/lib/xpSystem";
-import { Crown, Gamepad2, LogIn, Percent, Sparkles, Swords, Target, Trophy } from "lucide-react";
+import { Award, Gamepad2, LogIn, Percent, Sparkles, Swords, Target, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type RankRow = {
