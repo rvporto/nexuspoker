@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { BarChart3, Home, LogIn, LogOut, Swords, Trophy, User } from "lucide-react";
 import NavLink from "./NexusNavLink";
+import MobileHeader from "./MobileHeader";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
