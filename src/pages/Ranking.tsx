@@ -8,6 +8,7 @@ import RankingReport, { type ReportRow } from "@/components/RankingReport";
 import PodiumCard from "@/components/PodiumCard";
 import SeasonTabs from "@/components/SeasonTabs";
 import LevelBadge from "@/components/LevelBadge";
+import PlayerSummaryModal from "@/components/PlayerSummaryModal";
 import { formatBRL, formatPoints, initials } from "@/lib/format";
 import { AlertTriangle, Crown, Download, FileDown, Flag, LinkIcon, RefreshCw, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -58,6 +59,7 @@ export default function Ranking() {
   const [champions, setChampions] = useState<Record<number, { nickname: string; avatar_url: string | null }>>({});
   const [levelMap, setLevelMap] = useState<Map<string, number>>(new Map());
   const reportRef = useRef<HTMLDivElement>(null);
+  const [summaryPlayer, setSummaryPlayer] = useState<{ type: "user" | "temp"; refId: string; nickname: string; avatar_url: string | null } | null>(null);
 
   async function downloadReport() {
     if (!reportRef.current) return;
