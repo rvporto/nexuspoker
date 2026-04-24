@@ -16,7 +16,11 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 glass-effect">
+      {/* Mobile-only header + FAB drawer */}
+      <MobileHeader />
+
+      {/* Desktop header (>= md) */}
+      <header className="sticky top-0 z-40 hidden glass-effect md:block">
         <div className="container flex h-16 items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-3">
             <div className="relative h-12 w-12 shrink-0 rounded-full border-2 border-primary/70 bg-background-mid p-[2px]">
