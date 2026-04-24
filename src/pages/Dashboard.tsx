@@ -153,84 +153,51 @@ export default function Dashboard() {
       {isLoggedIn && stats && (() => {
         const wins = stats.history.filter((h) => h.profit_loss > 0).length;
         const winPct = stats.games > 0 ? Math.round((wins / stats.games) * 100) : 0;
+        const podiums = stats.history.filter(
+          (h) => h.game_type === "tournament" && h.position && h.position >= 1 && h.position <= 3,
+        ).length;
+        const tiles: { label: string; value: string; icon: JSX.Element; tone: string }[] = [
+          { label: "Pontos", value: formatPoints(stats.totalPoints), icon: <Sparkles className="h-3.5 w-3.5" />, tone: "bg-primary/15 text-primary" },
+          { label: "Posição", value: myRank ? `#${myRank}` : "—", icon: <Trophy className="h-3.5 w-3.5" />, tone: "bg-primary/15 text-primary" },
+          { label: "Partidas", value: String(stats.games), icon: <Gamepad2 className="h-3.5 w-3.5" />, tone: "bg-info/15 text-info" },
+          { label: "Pódios", value: String(podiums), icon: <Award className="h-3.5 w-3.5" />, tone: "bg-[hsl(46_65%_52%/0.15)] text-primary" },
+          { label: "% Vitórias", value: `${winPct}%`, icon: <Percent className="h-3.5 w-3.5" />, tone: "bg-success/15 text-success" },
+          { label: "KOs", value: String(stats.kos), icon: <Target className="h-3.5 w-3.5" />, tone: "bg-destructive/15 text-destructive" },
+        ];
         return (
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <StatCard label="Pontos temporada" value={formatPoints(stats.totalPoints)} icon={<Sparkles className="h-5 w-5" />} tone="gold" />
-            <StatCard label="Partidas" value={String(stats.games)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
-            <StatCard label="% Vitórias" value={`${winPct}%`} icon={<Percent className="h-5 w-5" />} tone="success" />
-            <StatCard label="Posição" value={myRank ? `#${myRank}` : "—"} icon={<Trophy className="h-5 w-5" />} tone="gold" />
-            <StatCard label="KOs" value={String(stats.kos)} icon={<Target className="h-5 w-5" />} tone="destructive" />
+          <section className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {tiles.map((t) => (
+              <div key={t.label} className="nexus-card flex flex-col items-start gap-1 p-2.5">
+                <div className="flex w-full items-center justify-between">
+                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                    {t.label}
+                  </span>
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-md ${t.tone}`}>
+                    {t.icon}
+                  </span>
+                </div>
+                <span className="text-base font-extrabold leading-tight">{t.value}</span>
+              </div>
+            ))}
           </section>
         );
       })()}
 
-      <section className="nexus-card p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Crown className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold">Top 5 — Temporada {season}</h2>
-          </div>
+      <section className="nexus-card p-4 sm:p-5">
+        <TopFivePodium
+          rows={top5.map((r) => ({
+            ...r,
+            level: r.player_type === "user" ? (levelMap.get(r.player_ref_id) ?? 1) : null,
+            is_me: !!user && r.player_type === "user" && r.player_ref_id === user.id,
+          })) as TopRow[]}
+          season={season}
+          metric={season >= 2026 ? "points" : "profit"}
+        />
+        <div className="mt-3 flex justify-end">
           <Button asChild size="sm" variant="ghost" className="text-primary hover:bg-primary/10">
-            <Link to="/ranking">Ver ranking</Link>
+            <Link to="/ranking">Ver ranking completo</Link>
           </Button>
         </div>
-        {top5.length === 0 ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">Nenhum jogador no ranking ainda.</div>
-        ) : (
-          <>
-            <div className="mb-4 grid grid-cols-3 items-end gap-2">
-              {[top5[1], top5[0], top5[2]].filter(Boolean).map((row, idx) => {
-                const place = idx === 1 ? 1 : idx === 0 ? 2 : 3;
-                const heights = ["h-20", "h-28", "h-16"];
-                const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
-                const lvl = row.player_type === "user" ? levelMap.get(row.player_ref_id) : undefined;
-                return (
-                  <div key={row.id} className="flex flex-col items-center gap-2">
-                    <Avatar className="h-12 w-12 border-2 border-primary/60">
-                      {row.avatar_url && <AvatarImage src={row.avatar_url} alt={row.player_nickname} />}
-                      <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <div className="text-xs font-semibold truncate max-w-[80px]">{row.player_nickname}</div>
-                        {lvl !== undefined && <LevelBadge level={lvl} size="xs" />}
-                        {isMe && <span className="nexus-chip bg-primary/20 px-1.5 text-[9px] font-bold text-primary">Você</span>}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {season >= 2026 ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
-                      </div>
-                    </div>
-                    <div className={`${heights[idx]} w-full rounded-t-lg bg-gradient-gold flex items-start justify-center pt-1`}>
-                      <span className="text-xs font-bold text-primary-foreground">{place}º</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="divide-y divide-border">
-              {top5.slice(3).map((row) => {
-                const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
-                const lvl = row.player_type === "user" ? levelMap.get(row.player_ref_id) : undefined;
-                return (
-                <div key={row.id} className="flex items-center justify-between py-2 text-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 text-muted-foreground">{row.position}º</span>
-                    <span className="font-medium">{row.player_nickname}</span>
-                    {lvl !== undefined && <LevelBadge level={lvl} size="xs" />}
-                    {isMe && <span className="nexus-chip bg-primary/20 px-1.5 text-[9px] font-bold text-primary">Você</span>}
-                    {row.player_type === "temp" && (
-                      <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temp</span>
-                    )}
-                  </div>
-                  <span className="text-primary font-semibold">
-                    {season >= 2026 ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
-                  </span>
-                </div>
-                );
-              })}
-            </div>
-          </>
-        )}
       </section>
 
       <SprintLeaderboard seasonYear={season} currentUserId={user?.id ?? null} />
