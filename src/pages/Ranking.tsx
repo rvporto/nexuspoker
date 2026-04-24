@@ -350,47 +350,34 @@ export default function Ranking() {
                   <span className={`text-lg font-bold ${isTop3 ? "text-primary" : "text-muted-foreground"}`}>{row.position}º</span>
                   <RankMovementBadge current={row.position} previous={row.prev_position ?? undefined} />
                 </div>
-                <Avatar className={`h-10 w-10 border ${isTop3 ? "border-primary/60" : "border-border"}`}>
-                  {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
-                  <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate font-semibold">{row.player_nickname}</span>
-                    {row.player_type === "user" && levelMap.get(row.player_ref_id) !== undefined && (
-                      <LevelBadge level={levelMap.get(row.player_ref_id)!} size="sm" />
-                    )}
-                    {isMe && (
-                      <span className="nexus-chip bg-primary/20 px-1.5 text-[10px] font-bold text-primary">Você</span>
-                    )}
-                    {isTemp && (
-                      <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temporário</span>
-                    )}
-                    {isTemp && isAdmin && (
-                      <Button
-                        size="sm" variant="outline"
-                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
-                        onClick={() => openLinkDialog(row.player_ref_id, row.player_nickname)}
-                      >
-                        <LinkIcon className="h-3 w-3" /> Vincular
-                      </Button>
-                    )}
-                    {isTemp && !isAdmin && isLoggedIn && (
-                      <Button
-                        size="sm" variant="outline"
-                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
-                        disabled={hasPendingFromMe}
-                        onClick={() => requestLink(row.player_ref_id)}
-                      >
-                        <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
-                      </Button>
-                    )}
+                <button
+                  type="button"
+                  onClick={() => setSummaryPlayer({ type: row.player_type, refId: row.player_ref_id, nickname: row.player_nickname, avatar_url: (row as any).avatar_url ?? null })}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-secondary/40"
+                >
+                  <Avatar className={`h-10 w-10 shrink-0 border ${isTop3 ? "border-primary/60" : "border-border"}`}>
+                    {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
+                    <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-semibold">{row.player_nickname}</span>
+                      {row.player_type === "user" && levelMap.get(row.player_ref_id) !== undefined && (
+                        <LevelBadge level={levelMap.get(row.player_ref_id)!} size="sm" />
+                      )}
+                      {isMe && (
+                        <span className="nexus-chip bg-primary/20 px-1.5 text-[10px] font-bold text-primary">Você</span>
+                      )}
+                      {isTemp && (
+                        <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temporário</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {row.games_played} partidas · {row.wins} vitórias · {row.kos} KOs
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {row.games_played} partidas · {row.wins} vitórias · {row.kos} KOs
-                  </div>
-                </div>
-                <div className="text-right">
+                </button>
+                <div className="flex flex-col items-end gap-1">
                   <div
                     className={`font-bold ${
                       metric === "points"
@@ -404,12 +391,37 @@ export default function Ranking() {
                   >
                     {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
                   </div>
+                  {isTemp && isAdmin && (
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                      onClick={(e) => { e.stopPropagation(); openLinkDialog(row.player_ref_id, row.player_nickname); }}
+                    >
+                      <LinkIcon className="h-3 w-3" /> Vincular
+                    </Button>
+                  )}
+                  {isTemp && !isAdmin && isLoggedIn && (
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                      disabled={hasPendingFromMe}
+                      onClick={(e) => { e.stopPropagation(); requestLink(row.player_ref_id); }}
+                    >
+                      <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
+                    </Button>
+                  )}
                 </div>
               </div>
             );
           })}
         </section>
       )}
+
+      <PlayerSummaryModal
+        open={!!summaryPlayer}
+        onOpenChange={(o) => !o && setSummaryPlayer(null)}
+        player={summaryPlayer}
+      />
 
       <Dialog open={!!linkDialog} onOpenChange={(o) => !o && setLinkDialog(null)}>
         <DialogContent className="max-w-md">
