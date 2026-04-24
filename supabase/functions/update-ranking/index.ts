@@ -376,9 +376,12 @@ Deno.serve(async (req) => {
     });
 
     // Sprints vencidos por usuário (bloco de 5 partidas dentro de cada temporada)
+    // Sprints valem APENAS a partir de 2026 — temporadas anteriores são ignoradas.
     const SPRINT_SIZE = 5;
+    const SPRINT_MIN_SEASON = 2026;
     const sprintsWonByUser = new Map<string, number>();
-    const seasonsList = Array.from(new Set(allGames.map((g) => g.season_year)));
+    const seasonsList = Array.from(new Set(allGames.map((g) => g.season_year)))
+      .filter((yr) => yr >= SPRINT_MIN_SEASON);
     for (const yr of seasonsList) {
       const yrGames = allGames
         .filter((g) => g.season_year === yr)
