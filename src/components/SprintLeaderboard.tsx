@@ -128,6 +128,9 @@ export default function SprintLeaderboard({ seasonYear, currentUserId }: Props) 
     return [...top5, { ...leaders[meIdx], position: meIdx + 1 }];
   }, [leaders, currentUserId]);
 
+  // Sprints só existem a partir de 2026
+  if (seasonYear < 2026) return null;
+
   return (
     <section className="nexus-card p-5">
       <div className="mb-4 flex items-center justify-between gap-2">

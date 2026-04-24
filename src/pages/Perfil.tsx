@@ -8,9 +8,9 @@ import LevelProgressCard from "@/components/LevelProgressCard";
 import AchievementsCard from "@/components/AchievementsCard";
 import { useAuth } from "@/context/AuthContext";
 import { formatBRL, formatDate, initials } from "@/lib/format";
-import { Coins, ChevronDown, ChevronUp, Edit3, Gamepad2, Percent, Sparkles, Target } from "lucide-react";
+import { Award, Coins, ChevronDown, ChevronUp, Edit3, Gamepad2, Percent, Sparkles, Target } from "lucide-react";
 import { Navigate } from "react-router-dom";
-import { currentSeason, getPlayerStats, type PlayerStats } from "@/lib/playerStats";
+import { currentSeason, getPlayerStats, getTournamentPodiumsAllTime, type PlayerStats } from "@/lib/playerStats";
 import { calcLevel } from "@/lib/xpSystem";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import AiAvatarDialog from "@/components/AiAvatarDialog";
@@ -21,6 +21,7 @@ export default function Perfil() {
   const { isLoggedIn, profile, loading, user, refreshProfile } = useAuth();
   const season = currentSeason();
   const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [totalPodiums, setTotalPodiums] = useState<number>(0);
   const [editOpen, setEditOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [showAllGames, setShowAllGames] = useState(false);
@@ -28,6 +29,7 @@ export default function Perfil() {
   useEffect(() => {
     if (!user) return;
     getPlayerStats({ userId: user.id }).then(setStats);
+    getTournamentPodiumsAllTime({ userId: user.id }).then(setTotalPodiums);
   }, [user]);
 
   if (loading) return null;
@@ -103,9 +105,10 @@ export default function Perfil() {
         const winPct = stats && stats.games > 0 ? Math.round((winsByProfit / stats.games) * 100) : 0;
         const buyRebuy = (stats?.buyIns ?? 0) + (stats?.rebuys ?? 0);
         return (
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <StatCard label="Partidas" value={String(stats?.games ?? 0)} icon={<Gamepad2 className="h-5 w-5" />} tone="info" />
             <StatCard label="% Vitórias" value={`${winPct}%`} icon={<Percent className="h-5 w-5" />} tone="success" />
+            <StatCard label="Pódios totais" value={String(totalPodiums)} icon={<Award className="h-5 w-5" />} tone="gold" />
             <StatCard label="Buy-ins + Rebuys" value={String(buyRebuy)} icon={<Coins className="h-5 w-5" />} tone="gold" />
             <StatCard label="KOs" value={String(stats?.kos ?? 0)} icon={<Target className="h-5 w-5" />} tone="destructive" />
           </section>
