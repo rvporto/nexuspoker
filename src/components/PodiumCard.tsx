@@ -60,8 +60,7 @@ export default function PodiumCard({ place, entry, metric, championYear }: Props
   const Icon = meta.icon;
   const valueText =
     metric === "points" ? `${formatPoints(entry.total_points)} pts` : formatBRL(entry.total_profit);
-  const winRate =
-    entry.games_played > 0 ? Math.round((entry.wins / entry.games_played) * 100) : 0;
+
 
   return (
     <div className="relative flex flex-col items-center pt-5 sm:pt-7">
