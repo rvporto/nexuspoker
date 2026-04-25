@@ -135,31 +135,6 @@ export default function PodiumCard({ place, entry, metric, championYear }: Props
           )}
         </div>
 
-        {/* Stats list — escondido no mobile pra deixar mais limpo */}
-        <div className="mt-3 hidden space-y-1.5 border-t border-border pt-3 text-xs sm:block">
-          <Row
-            icon={<Gamepad2 className="h-3.5 w-3.5 text-info" />}
-            label="Partidas"
-            value={String(entry.games_played)}
-          />
-          <Row
-            icon={<Target className="h-3.5 w-3.5 text-success" />}
-            label="Vitórias"
-            value={`${winRate}%`}
-          />
-          {entry.level !== undefined && (
-            <Row
-              icon={<TrendingUp className="h-3.5 w-3.5 text-primary" />}
-              label="Nível"
-              value={String(entry.level)}
-            />
-          )}
-        </div>
-
-        {/* No mobile, mostra apenas resumo numa linha */}
-        <div className="mt-2 flex justify-center text-[10px] text-muted-foreground sm:hidden">
-          {entry.games_played} part. · {winRate}% vit.
-        </div>
       </div>
     </div>
   );
