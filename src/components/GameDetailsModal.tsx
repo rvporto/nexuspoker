@@ -312,7 +312,8 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
             </div>
             {game.description && <div className="text-sm">{game.description}</div>}
 
-            <div className="overflow-x-auto rounded-lg border border-border">
+            {/* Desktop: tabela completa */}
+            <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -411,6 +412,98 @@ export default function GameDetailsModal({ open, onOpenChange, gameId, onChanged
                   ))}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Mobile: cards compactos */}
+            <div className="space-y-2 md:hidden">
+              {parts.map((p) => (
+                <div key={p.id} className="rounded-lg border border-border bg-secondary/30 p-3">
+                  {/* Header: pos + nome + lucro/pts */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-gold text-xs font-bold text-primary-foreground">
+                      {p.position && p.position <= 3 ? (
+                        <Trophy className="h-4 w-4" />
+                      ) : (
+                        initials(p.player_nickname)
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-semibold">{p.player_nickname}</span>
+                        {p.temp_player_id && (
+                          <span className="nexus-chip bg-muted/40 text-[9px] uppercase text-muted-foreground">temp</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>Pos. {p.position ?? "—"}</span>
+                        <span>·</span>
+                        <span className="font-semibold text-primary">{p.ranking_points} pts</span>
+                        <span>·</span>
+                        <span className={`font-semibold ${p.profit_loss > 0 ? "text-success" : p.profit_loss < 0 ? "text-destructive" : ""}`}>
+                          {formatBRL(p.profit_loss)}
+                        </span>
+                      </div>
+                    </div>
+                    {isEditable && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => removeParticipant(p.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Inputs em grid 2x2 / 2x3 */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {game.type === "tournament" && (
+                      <MobileField label="Pos.">
+                        <Input
+                          type="number" min={1}
+                          value={p.position ?? ""}
+                          placeholder="—"
+                          disabled={!isEditable}
+                          onChange={(e) => updatePart(p.id, { position: e.target.value ? Number(e.target.value) : null })}
+                          className="h-8 text-sm"
+                        />
+                      </MobileField>
+                    )}
+                    <MobileField label="Entradas">
+                      <Input
+                        type="number" min={1}
+                        value={p.entries}
+                        disabled={!isEditable}
+                        onChange={(e) => updatePart(p.id, { entries: Number(e.target.value) })}
+                        className="h-8 text-sm"
+                      />
+                    </MobileField>
+                    <MobileField label="Rebuys">
+                      <Input
+                        type="number" min={0}
+                        value={p.rebuys}
+                        disabled={!isEditable}
+                        onChange={(e) => updatePart(p.id, { rebuys: Number(e.target.value) })}
+                        className="h-8 text-sm"
+                      />
+                    </MobileField>
+                    <MobileField label="KOs">
+                      <Input
+                        type="number" min={0}
+                        value={p.ko_points}
+                        disabled={!isEditable}
+                        onChange={(e) => updatePart(p.id, { ko_points: Number(e.target.value) })}
+                        className="h-8 text-sm"
+                      />
+                    </MobileField>
+                    <MobileField label="Final (R$)" className={game.type === "cash" ? "col-span-2" : ""}>
+                      <Input
+                        type="number" step="0.01" min={0}
+                        value={p.final_amount}
+                        disabled={!isEditable}
+                        onChange={(e) => updatePart(p.id, { final_amount: Number(e.target.value) })}
+                        className="h-8 text-sm"
+                      />
+                    </MobileField>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
