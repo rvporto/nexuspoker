@@ -494,17 +494,20 @@ export default function Ranking() {
                 ref={reportRef}
                 season={season ?? new Date().getFullYear()}
                 metric={metric as "points" | "profit"}
-                rows={currentRows.map((r) => ({
-                  id: r.id,
-                  position: r.position,
-                  player_nickname: r.player_nickname,
-                  avatar_url: (r as any).avatar_url ?? null,
-                  total_points: r.total_points,
-                  total_profit: r.total_profit,
-                  games_played: r.games_played,
-                  wins: r.wins,
-                  kos: r.kos,
-                })) as ReportRow[]}
+                rows={currentRows.map((r) => {
+                  const key = r.player_type === "user" ? `user:${r.player_ref_id}` : `temp:${r.player_ref_id}`;
+                  return {
+                    id: r.id,
+                    position: r.position,
+                    player_nickname: r.player_nickname,
+                    avatar_url: (r as any).avatar_url ?? null,
+                    total_points: r.total_points,
+                    total_profit: r.total_profit,
+                    games_played: r.games_played,
+                    wins: r.wins,
+                    tournament_wins: tournamentWinsMap.get(key) ?? 0,
+                  };
+                }) as ReportRow[]}
               />
             </div>
           </div>
