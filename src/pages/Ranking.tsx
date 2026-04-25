@@ -60,6 +60,7 @@ export default function Ranking() {
   const [levelMap, setLevelMap] = useState<Map<string, number>>(new Map());
   const reportRef = useRef<HTMLDivElement>(null);
   const [summaryPlayer, setSummaryPlayer] = useState<{ type: "user" | "temp"; refId: string; nickname: string; avatar_url: string | null } | null>(null);
+  const [tournamentWinsMap, setTournamentWinsMap] = useState<Map<string, number>>(new Map());
 
   async function downloadReport() {
     if (!reportRef.current) return;
