@@ -4,6 +4,7 @@ import NavLink from "./NexusNavLink";
 import MobileHeader from "./MobileHeader";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import nexusLogoOfficial from "@/assets/nexus-logo-official.png";
 
 export default function Layout() {
   const { isLoggedIn, isAdmin, profile, signOut } = useAuth();
@@ -23,10 +24,12 @@ export default function Layout() {
       <header className="sticky top-0 z-40 hidden glass-effect md:block">
         <div className="container flex h-16 items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-3">
-            <div className="relative h-12 w-12 shrink-0 rounded-full border-2 border-primary/70 bg-background-mid p-[2px]">
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-gold">
-                <span className="text-lg font-extrabold text-primary-foreground">N</span>
-              </div>
+            <div className="relative h-12 w-12 shrink-0">
+              <img
+                src={nexusLogoOfficial}
+                alt="Nexus Poker House"
+                className="h-full w-full object-contain"
+              />
             </div>
             <div className="hidden flex-col leading-tight sm:flex">
               <span className="text-base font-bold nexus-text-gold">Nexus Poker House</span>
