@@ -282,7 +282,7 @@ export default function Ranking() {
               <Flag className="h-4 w-4" /> {closingSeason ? "Encerrando..." : (season !== null && closedYears.has(season)) ? "Temporada encerrada" : "Encerrar temporada"}
             </Button>
           )}
-          <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => setReportOpen(true)}>
+          <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => { fetchTournamentWins(); setReportOpen(true); }}>
             <FileDown className="h-4 w-4" /> Relatório
           </Button>
         </div>
