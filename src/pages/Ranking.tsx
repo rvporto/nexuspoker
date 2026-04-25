@@ -60,6 +60,7 @@ export default function Ranking() {
   const [levelMap, setLevelMap] = useState<Map<string, number>>(new Map());
   const reportRef = useRef<HTMLDivElement>(null);
   const [summaryPlayer, setSummaryPlayer] = useState<{ type: "user" | "temp"; refId: string; nickname: string; avatar_url: string | null } | null>(null);
+  const [tournamentWinsMap, setTournamentWinsMap] = useState<Map<string, number>>(new Map());
 
   async function downloadReport() {
     if (!reportRef.current) return;
@@ -169,6 +170,23 @@ export default function Ranking() {
     if (error) { toast.error("Erro ao recalcular: " + error.message); return; }
     toast.success(`Ranking atualizado (${data?.total ?? 0} jogadores, modo ${data?.mode})`);
     loadAll();
+  }
+
+  async function fetchTournamentWins() {
+    if (season === null) return;
+    const { data } = await supabase
+      .from("game_participations")
+      .select("user_id, temp_player_id, position, games!inner(type, season_year)")
+      .eq("position", 1);
+    const map = new Map<string, number>();
+    (data ?? []).forEach((r: any) => {
+      if (!r.games || r.games.type !== "tournament") return;
+      if (r.games.season_year !== season) return;
+      const key = r.user_id ? `user:${r.user_id}` : r.temp_player_id ? `temp:${r.temp_player_id}` : null;
+      if (!key) return;
+      map.set(key, (map.get(key) ?? 0) + 1);
+    });
+    setTournamentWinsMap(map);
   }
 
   async function requestLink(tempPlayerId: string) {
@@ -281,7 +299,7 @@ export default function Ranking() {
               <Flag className="h-4 w-4" /> {closingSeason ? "Encerrando..." : (season !== null && closedYears.has(season)) ? "Temporada encerrada" : "Encerrar temporada"}
             </Button>
           )}
-          <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => setReportOpen(true)}>
+          <Button size="sm" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10" disabled={currentRows.length === 0} onClick={() => { fetchTournamentWins(); setReportOpen(true); }}>
             <FileDown className="h-4 w-4" /> Relatório
           </Button>
         </div>
@@ -373,7 +391,7 @@ export default function Ranking() {
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {row.games_played} partidas · {row.wins} vitórias · {row.kos} KOs
+                      {row.games_played} {row.games_played === 1 ? "partida" : "partidas"}
                     </div>
                   </div>
                 </button>
@@ -476,17 +494,20 @@ export default function Ranking() {
                 ref={reportRef}
                 season={season ?? new Date().getFullYear()}
                 metric={metric as "points" | "profit"}
-                rows={currentRows.map((r) => ({
-                  id: r.id,
-                  position: r.position,
-                  player_nickname: r.player_nickname,
-                  avatar_url: (r as any).avatar_url ?? null,
-                  total_points: r.total_points,
-                  total_profit: r.total_profit,
-                  games_played: r.games_played,
-                  wins: r.wins,
-                  kos: r.kos,
-                })) as ReportRow[]}
+                rows={currentRows.map((r) => {
+                  const key = r.player_type === "user" ? `user:${r.player_ref_id}` : `temp:${r.player_ref_id}`;
+                  return {
+                    id: r.id,
+                    position: r.position,
+                    player_nickname: r.player_nickname,
+                    avatar_url: (r as any).avatar_url ?? null,
+                    total_points: r.total_points,
+                    total_profit: r.total_profit,
+                    games_played: r.games_played,
+                    wins: r.wins,
+                    tournament_wins: tournamentWinsMap.get(key) ?? 0,
+                  };
+                }) as ReportRow[]}
               />
             </div>
           </div>
