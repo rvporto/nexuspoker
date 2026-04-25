@@ -373,7 +373,7 @@ export default function Ranking() {
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {row.games_played} partidas · {row.wins} vitórias · {row.kos} KOs
+                      {row.games_played} {row.games_played === 1 ? "partida" : "partidas"}
                     </div>
                   </div>
                 </button>
