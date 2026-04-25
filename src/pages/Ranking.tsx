@@ -172,7 +172,23 @@ export default function Ranking() {
     loadAll();
   }
 
-  async function requestLink(tempPlayerId: string) {
+  async function fetchTournamentWins() {
+    if (season === null) return;
+    const { data } = await supabase
+      .from("game_participations")
+      .select("user_id, temp_player_id, position, games!inner(type, season_year)")
+      .eq("position", 1);
+    const map = new Map<string, number>();
+    (data ?? []).forEach((r: any) => {
+      if (!r.games || r.games.type !== "tournament") return;
+      if (r.games.season_year !== season) return;
+      const key = r.user_id ? `user:${r.user_id}` : r.temp_player_id ? `temp:${r.temp_player_id}` : null;
+      if (!key) return;
+      map.set(key, (map.get(key) ?? 0) + 1);
+    });
+    setTournamentWinsMap(map);
+  }
+
     if (!user) { toast.error("Faça login primeiro"); return; }
     const { error } = await supabase.from("link_requests").insert({
       user_id: user.id,
