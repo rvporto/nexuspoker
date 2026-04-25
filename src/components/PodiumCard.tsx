@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { initials, formatBRL, formatPoints } from "@/lib/format";
 import LevelBadge from "@/components/LevelBadge";
-import { Crown, Medal, Award, Gamepad2, Target, TrendingUp } from "lucide-react";
+import { Crown, Medal, Award } from "lucide-react";
 
 export type PodiumEntry = {
   id: string;
@@ -136,26 +136,6 @@ export default function PodiumCard({ place, entry, metric, championYear }: Props
         </div>
 
       </div>
-    </div>
-  );
-}
-
-function Row({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="flex items-center gap-1.5 text-muted-foreground">
-        {icon}
-        {label}
-      </span>
-      <span className="font-bold">{value}</span>
     </div>
   );
 }
