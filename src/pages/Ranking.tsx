@@ -189,6 +189,7 @@ export default function Ranking() {
     setTournamentWinsMap(map);
   }
 
+  async function requestLink(tempPlayerId: string) {
     if (!user) { toast.error("Faça login primeiro"); return; }
     const { error } = await supabase.from("link_requests").insert({
       user_id: user.id,
