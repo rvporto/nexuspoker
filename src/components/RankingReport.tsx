@@ -12,7 +12,7 @@ export type ReportRow = {
   total_profit: number;
   games_played: number;
   wins: number;
-  kos: number;
+  tournament_wins: number;
 };
 
 interface Props {
@@ -80,7 +80,7 @@ const RankingReport = forwardRef<HTMLDivElement, Props>(({ season, rows, metric 
                       {metric === "points" ? `${row.total_points} pts` : formatBRL(row.total_profit)}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {row.games_played} partidas · {row.wins} vitórias
+                      {row.games_played} partidas · {row.tournament_wins} {row.tournament_wins === 1 ? "vitória" : "vitórias"} em torneios
                     </div>
                   </div>
                   <div
@@ -114,8 +114,7 @@ const RankingReport = forwardRef<HTMLDivElement, Props>(({ season, rows, metric 
                   <th className="p-4 w-16">Pos</th>
                   <th className="p-4">Jogador</th>
                   <th className="p-4 text-right">Partidas</th>
-                  <th className="p-4 text-right">Vit.</th>
-                  <th className="p-4 text-right">KOs</th>
+                  <th className="p-4 text-right">Vit. Torneios</th>
                   <th className="p-4 text-right">{metric === "points" ? "Pontos" : "Lucro"}</th>
                 </tr>
               </thead>
@@ -135,8 +134,7 @@ const RankingReport = forwardRef<HTMLDivElement, Props>(({ season, rows, metric 
                       </div>
                     </td>
                     <td className="p-4 text-right">{row.games_played}</td>
-                    <td className="p-4 text-right">{row.wins}</td>
-                    <td className="p-4 text-right">{row.kos}</td>
+                    <td className="p-4 text-right">{row.tournament_wins}</td>
                     <td className="p-4 text-right font-bold text-primary">
                       {metric === "points" ? `${row.total_points} pts` : formatBRL(row.total_profit)}
                     </td>
