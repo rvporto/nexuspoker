@@ -363,71 +363,117 @@ export default function Ranking() {
             const isTop3 = row.position <= 3;
             const isMe = !!user && row.player_type === "user" && row.player_ref_id === user.id;
             return (
-              <div key={row.id} className={`flex items-center gap-3 p-4 ${isTop3 ? "bg-primary/5" : ""}`}>
-                <div className="flex w-14 items-center gap-2">
-                  <span className={`text-lg font-bold ${isTop3 ? "text-primary" : "text-muted-foreground"}`}>{row.position}º</span>
-                  <RankMovementBadge current={row.position} previous={row.prev_position ?? undefined} />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSummaryPlayer({ type: row.player_type, refId: row.player_ref_id, nickname: row.player_nickname, avatar_url: (row as any).avatar_url ?? null })}
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-secondary/40"
-                >
-                  <Avatar className={`h-10 w-10 shrink-0 border ${isTop3 ? "border-primary/60" : "border-border"}`}>
-                    {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
-                    <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate font-semibold">{row.player_nickname}</span>
-                      {row.player_type === "user" && levelMap.get(row.player_ref_id) !== undefined && (
-                        <LevelBadge level={levelMap.get(row.player_ref_id)!} size="sm" />
-                      )}
-                      {isMe && (
-                        <span className="nexus-chip bg-primary/20 px-1.5 text-[10px] font-bold text-primary">Você</span>
-                      )}
-                      {isTemp && (
-                        <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temporário</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {row.games_played} {row.games_played === 1 ? "partida" : "partidas"}
-                    </div>
+              <div key={row.id} className={`p-3 sm:p-4 ${isTop3 ? "bg-primary/5" : ""}`}>
+                {/* Linha 1: posição + avatar + nome + level/chips. Valor à direita no desktop. */}
+                <div className="flex items-center gap-3">
+                  <div className="flex w-12 items-center gap-1.5 sm:w-14 sm:gap-2">
+                    <span className={`text-base font-bold sm:text-lg ${isTop3 ? "text-primary" : "text-muted-foreground"}`}>{row.position}º</span>
+                    <RankMovementBadge current={row.position} previous={row.prev_position ?? undefined} />
                   </div>
-                </button>
-                <div className="flex flex-col items-end gap-1">
-                  <div
-                    className={`font-bold ${
-                      metric === "points"
-                        ? "text-primary"
-                        : row.total_profit > 0
-                          ? "text-success"
-                          : row.total_profit < 0
-                            ? "text-destructive"
-                            : "text-muted-foreground"
-                    }`}
+                  <button
+                    type="button"
+                    onClick={() => setSummaryPlayer({ type: row.player_type, refId: row.player_ref_id, nickname: row.player_nickname, avatar_url: (row as any).avatar_url ?? null })}
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-secondary/40"
                   >
-                    {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
+                    <Avatar className={`h-10 w-10 shrink-0 border ${isTop3 ? "border-primary/60" : "border-border"}`}>
+                      {(row as any).avatar_url && <AvatarImage src={(row as any).avatar_url} alt={row.player_nickname} />}
+                      <AvatarFallback className="bg-secondary">{initials(row.player_nickname)}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="break-words font-semibold leading-tight">{row.player_nickname}</span>
+                        {row.player_type === "user" && levelMap.get(row.player_ref_id) !== undefined && (
+                          <LevelBadge level={levelMap.get(row.player_ref_id)!} size="sm" />
+                        )}
+                        {isMe && (
+                          <span className="nexus-chip bg-primary/20 px-1.5 text-[10px] font-bold text-primary">Você</span>
+                        )}
+                        {isTemp && (
+                          <span className="nexus-chip bg-secondary text-[10px] text-muted-foreground">Temporário</span>
+                        )}
+                      </div>
+                      {/* Partidas: visível no desktop (mobile mostra na linha 2 abaixo) */}
+                      <div className="hidden text-xs text-muted-foreground sm:block">
+                        {row.games_played} {row.games_played === 1 ? "partida" : "partidas"}
+                      </div>
+                    </div>
+                  </button>
+                  {/* Coluna direita: valor + ação. Visível no desktop. */}
+                  <div className="hidden flex-col items-end gap-1 sm:flex">
+                    <div
+                      className={`font-bold ${
+                        metric === "points"
+                          ? "text-primary"
+                          : row.total_profit > 0
+                            ? "text-success"
+                            : row.total_profit < 0
+                              ? "text-destructive"
+                              : "text-muted-foreground"
+                      }`}
+                    >
+                      {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
+                    </div>
+                    {isTemp && isAdmin && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                        onClick={(e) => { e.stopPropagation(); openLinkDialog(row.player_ref_id, row.player_nickname); }}
+                      >
+                        <LinkIcon className="h-3 w-3" /> Vincular
+                      </Button>
+                    )}
+                    {isTemp && !isAdmin && isLoggedIn && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                        disabled={hasPendingFromMe}
+                        onClick={(e) => { e.stopPropagation(); requestLink(row.player_ref_id); }}
+                      >
+                        <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
+                      </Button>
+                    )}
                   </div>
-                  {isTemp && isAdmin && (
-                    <Button
-                      size="sm" variant="outline"
-                      className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
-                      onClick={(e) => { e.stopPropagation(); openLinkDialog(row.player_ref_id, row.player_nickname); }}
+                </div>
+
+                {/* Linha 2 (apenas mobile): partidas à esquerda, valor + ação à direita */}
+                <div className="mt-2 flex items-center justify-between gap-2 pl-12 sm:hidden">
+                  <div className="text-xs text-muted-foreground">
+                    {row.games_played} {row.games_played === 1 ? "partida" : "partidas"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`text-sm font-bold ${
+                        metric === "points"
+                          ? "text-primary"
+                          : row.total_profit > 0
+                            ? "text-success"
+                            : row.total_profit < 0
+                              ? "text-destructive"
+                              : "text-muted-foreground"
+                      }`}
                     >
-                      <LinkIcon className="h-3 w-3" /> Vincular
-                    </Button>
-                  )}
-                  {isTemp && !isAdmin && isLoggedIn && (
-                    <Button
-                      size="sm" variant="outline"
-                      className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
-                      disabled={hasPendingFromMe}
-                      onClick={(e) => { e.stopPropagation(); requestLink(row.player_ref_id); }}
-                    >
-                      <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
-                    </Button>
-                  )}
+                      {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
+                    </div>
+                    {isTemp && isAdmin && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                        onClick={(e) => { e.stopPropagation(); openLinkDialog(row.player_ref_id, row.player_nickname); }}
+                      >
+                        <LinkIcon className="h-3 w-3" /> Vincular
+                      </Button>
+                    )}
+                    {isTemp && !isAdmin && isLoggedIn && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 border-primary/40 px-2 py-0 text-[10px] text-primary hover:bg-primary/10"
+                        disabled={hasPendingFromMe}
+                        onClick={(e) => { e.stopPropagation(); requestLink(row.player_ref_id); }}
+                      >
+                        <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

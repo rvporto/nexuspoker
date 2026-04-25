@@ -88,9 +88,9 @@ export default function PodiumCard({ place, entry, metric, championYear }: Props
         <div className="flex justify-center">
           <Avatar
             className={cn(
-              "h-14 w-14 ring-2 ring-offset-2 ring-offset-background sm:h-20 sm:w-20",
+              "h-11 w-11 ring-2 ring-offset-2 ring-offset-background sm:h-20 sm:w-20",
               meta.avatarRing,
-              place === 1 && "h-16 w-16 sm:h-24 sm:w-24",
+              place === 1 && "h-12 w-12 sm:h-24 sm:w-24",
             )}
           >
             {entry.avatar_url && (
@@ -104,16 +104,21 @@ export default function PodiumCard({ place, entry, metric, championYear }: Props
 
         {/* Name + value */}
         <div className="mt-2 text-center sm:mt-3">
-          <div className="flex flex-wrap items-center justify-center gap-1">
-            <span className="truncate text-[11px] font-bold sm:text-base">
+          <div className="flex flex-col items-center gap-1 sm:flex-row sm:flex-wrap sm:justify-center">
+            <span
+              className="line-clamp-2 break-words text-[10px] font-bold leading-tight sm:line-clamp-1 sm:truncate sm:text-base"
+              title={entry.player_nickname}
+            >
               {entry.player_nickname}
             </span>
-            {entry.level !== undefined && <LevelBadge level={entry.level} size="xs" />}
-            {entry.is_me && (
-              <span className="rounded-full bg-primary/20 px-1 py-0.5 text-[8px] font-bold uppercase text-primary sm:px-1.5 sm:text-[9px]">
-                Você
-              </span>
-            )}
+            <div className="flex items-center gap-1">
+              {entry.level !== undefined && <LevelBadge level={entry.level} size="xs" />}
+              {entry.is_me && (
+                <span className="rounded-full bg-primary/20 px-1 py-0.5 text-[8px] font-bold uppercase text-primary sm:px-1.5 sm:text-[9px]">
+                  Você
+                </span>
+              )}
+            </div>
           </div>
           <div
             className={cn(
