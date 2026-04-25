@@ -566,3 +566,12 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function MobileField({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={className}>
+      <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      {children}
+    </div>
+  );
+}
