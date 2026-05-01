@@ -441,19 +441,6 @@ export default function Ranking() {
                     {row.games_played} {row.games_played === 1 ? "partida" : "partidas"}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div
-                      className={`text-sm font-bold ${
-                        metric === "points"
-                          ? "text-primary"
-                          : row.total_profit > 0
-                            ? "text-success"
-                            : row.total_profit < 0
-                              ? "text-destructive"
-                              : "text-muted-foreground"
-                      }`}
-                    >
-                      {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
-                    </div>
                     {isTemp && isAdmin && (
                       <Button
                         size="sm" variant="outline"
@@ -473,6 +460,19 @@ export default function Ranking() {
                         <UserCheck className="h-3 w-3" /> {hasPendingFromMe ? "Pendente" : "Solicitar"}
                       </Button>
                     )}
+                    <div
+                      className={`text-sm font-bold ${
+                        metric === "points"
+                          ? "text-primary"
+                          : row.total_profit > 0
+                            ? "text-success"
+                            : row.total_profit < 0
+                              ? "text-destructive"
+                              : "text-muted-foreground"
+                      }`}
+                    >
+                      {metric === "points" ? `${formatPoints(row.total_points)} pts` : formatBRL(row.total_profit)}
+                    </div>
                   </div>
                 </div>
               </div>
