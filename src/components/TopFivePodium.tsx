@@ -88,7 +88,7 @@ export default function TopFivePodium({ rows, season, metric, championNickname }
               <div className="relative">
                 <Avatar
                   className={cn(
-                    "h-14 w-14 ring-2 ring-offset-2 ring-offset-background sm:h-16 sm:w-16",
+                    "h-11 w-11 ring-2 ring-offset-2 ring-offset-background sm:h-16 sm:w-16",
                     place === 1 ? "ring-primary" : place === 2 ? "ring-muted" : "ring-[hsl(25_85%_55%)]",
                   )}
                 >
@@ -99,7 +99,7 @@ export default function TopFivePodium({ rows, season, metric, championNickname }
                 </Avatar>
                 <div
                   className={cn(
-                    "absolute -bottom-2 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full text-xs font-extrabold shadow-md sm:h-7 sm:w-7 sm:text-sm",
+                    "absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[10px] font-extrabold shadow-md sm:h-7 sm:w-7 sm:text-sm",
                     NUMBER_BG[place],
                   )}
                 >
@@ -107,8 +107,11 @@ export default function TopFivePodium({ rows, season, metric, championNickname }
                 </div>
               </div>
               <div className="mt-4 flex w-full flex-col items-center text-center">
-                <div className="flex items-center gap-1">
-                  <span className="line-clamp-1 max-w-[110px] text-xs font-bold sm:max-w-none sm:text-sm">
+                <div className="flex w-full flex-col items-center gap-1 sm:flex-row sm:justify-center">
+                  <span
+                    className="line-clamp-2 w-full break-words text-[11px] font-bold leading-tight sm:line-clamp-1 sm:w-auto sm:max-w-none sm:text-sm"
+                    title={r.player_nickname}
+                  >
                     {r.player_nickname}
                   </span>
                   {r.level != null && <LevelBadge level={r.level} size="xs" />}
