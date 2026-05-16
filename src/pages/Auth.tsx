@@ -11,12 +11,34 @@ import { signInSchema, signUpSchema } from "@/lib/validation";
 export default function Auth() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) {
+      toast.error("Informe seu email.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Enviamos um link de recuperação para seu email.");
+      setMode("login");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     if (isLoggedIn) navigate("/", { replace: true });
