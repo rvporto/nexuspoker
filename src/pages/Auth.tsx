@@ -95,15 +95,17 @@ export default function Auth() {
     <div className="mx-auto max-w-md">
       <div className="nexus-card p-6">
         <h1 className="mb-1 text-2xl font-bold nexus-text-gold">
-          {mode === "login" ? "Entrar" : "Criar conta"}
+          {mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : "Recuperar senha"}
         </h1>
         <p className="mb-5 text-sm text-muted-foreground">
           {mode === "login"
             ? "Acesse sua conta da Nexus Poker House."
-            : "Cadastre-se para acompanhar seu progresso."}
+            : mode === "signup"
+              ? "Cadastre-se para acompanhar seu progresso."
+              : "Informe seu email para receber o link de redefinição."}
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={mode === "forgot" ? handleForgotPassword : handleSubmit} className="space-y-4">
           {mode === "signup" && (
             <>
               <div>
@@ -142,36 +144,70 @@ export default function Auth() {
               autoComplete="email"
             />
           </div>
-          <div>
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              minLength={6}
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Senha</Label>
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setMode("forgot")}
+                  >
+                    Esqueci minha senha
+                  </button>
+                )}
+              </div>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={6}
+              />
+            </div>
+          )}
           <Button
             type="submit"
             disabled={submitting}
             className="w-full bg-gradient-gold text-primary-foreground hover:opacity-90"
           >
-            {submitting ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+            {submitting
+              ? "Aguarde..."
+              : mode === "login"
+                ? "Entrar"
+                : mode === "signup"
+                  ? "Criar conta"
+                  : "Enviar link de recuperação"}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          {mode === "login" ? "Ainda não tem conta? " : "Já tem conta? "}
-          <button
-            type="button"
-            className="text-primary hover:underline"
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          >
-            {mode === "login" ? "Criar" : "Entrar"}
-          </button>
+          {mode === "forgot" ? (
+            <>
+              Lembrou a senha?{" "}
+              <button
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => setMode("login")}
+              >
+                Entrar
+              </button>
+            </>
+          ) : (
+            <>
+              {mode === "login" ? "Ainda não tem conta? " : "Já tem conta? "}
+              <button
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => setMode(mode === "login" ? "signup" : "login")}
+              >
+                {mode === "login" ? "Criar" : "Entrar"}
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
