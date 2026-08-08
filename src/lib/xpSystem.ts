@@ -212,10 +212,10 @@ export const calcAllAchievements = (
         rrCount.vencedor_rr = times;
       }
       consecutiveTournamentWins += 1;
+      // Cada nova vitória em sequência forma um novo par consecutivo (A+B, B+C, ...)
       if (consecutiveTournamentWins >= 2) {
         rrCount.btb_champion_rr = (rrCount.btb_champion_rr || 0) + 1;
         achievementXP += ACHIEVEMENT_DEFINITIONS.btb_champion_rr.xp;
-        consecutiveTournamentWins = 0;
       }
     } else if (game.type === "tournament") {
       consecutiveTournamentWins = 0;
@@ -248,7 +248,7 @@ export const calcAllAchievements = (
   rrProgress.vencedor_rr = tournamentWins % vencedorThr;
   rrProgress.cashman_rr = cashProfitGames % cashThr;
   rrProgress.consistente_rr = consecutiveProfit;
-  rrProgress.btb_champion_rr = consecutiveTournamentWins;
+  rrProgress.btb_champion_rr = consecutiveTournamentWins > 0 ? 1 : 0;
 
   // Soberano — campeão sazonal
   const seasonalMap: Record<string, number[]> = {};
