@@ -136,7 +136,7 @@ function calcAllAchievements(
   rrProgress.vencedor_rr = tournamentWins % 5;
   rrProgress.cashman_rr = cashProfitGames % 5;
   rrProgress.consistente_rr = consecutiveProfit;
-  rrProgress.btb_champion_rr = consecutiveTournamentWins;
+  rrProgress.btb_champion_rr = consecutiveTournamentWins > 0 ? 1 : 0;
 
   const seasonalMap: Record<string, number[]> = {};
   if (seasonChampionYears.length > 0) {
