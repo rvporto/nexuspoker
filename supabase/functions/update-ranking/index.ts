@@ -114,10 +114,10 @@ function calcAllAchievements(
         rrCount.vencedor_rr = times;
       }
       consecutiveTournamentWins += 1;
+      // Cada nova vitória em sequência forma um novo par consecutivo (A+B, B+C, ...)
       if (consecutiveTournamentWins >= 2) {
         rrCount.btb_champion_rr = (rrCount.btb_champion_rr || 0) + 1;
         achievementXP += ACHIEVEMENT_DEFINITIONS.btb_champion_rr.xp;
-        consecutiveTournamentWins = 0;
       }
     } else if (game.type === "tournament") {
       consecutiveTournamentWins = 0;
